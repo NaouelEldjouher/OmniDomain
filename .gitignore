@@ -1,0 +1,35 @@
+# === Nextflow Heavy Execution Data ===
+.nextflow/
+.nextflow.log*
+work/
+
+# === Pipeline Output Directories ===
+outputs/
+results/
+
+# === Heavy Biological Test Data ===
+test_data/
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.fasta
+*.fa
+*.fna
+*.bam
+*.bai
+*.sam
+
+# === Terraform Infrastructure ===
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# === System & Editor Files ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*:Zone.Identifier
