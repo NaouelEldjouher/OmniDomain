@@ -1,6 +1,5 @@
 // subworkflows/local/shared/qc_hifi.nf
 // Description: Quality control subworkflow specifically tailored for PacBio HiFi reads
-
 include { HIFIADAPTERFILT } from '../../../modules/local/phytoflow/hifiadapterfilt/main'
 include { SEQKIT_STATS    } from '../../../modules/local/shared/seqkit_stats/main'
 
