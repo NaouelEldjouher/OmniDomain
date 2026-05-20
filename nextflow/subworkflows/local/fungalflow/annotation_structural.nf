@@ -1,8 +1,6 @@
-/*
- * Include your custom eukaryotic annotation wrappers from modules/local/
- */
-include { BRAKER3     } from '../../../modules/local/braker3/main'
-include { FUNANNOTATE } from '../../../modules/local/funannotate/main'
+
+include { BRAKER3     } from '../../../modules/local/shared/braker3/main'
+include { FUNANNOTATE } from '../../../modules/local/fungalflow/funannotate/main'
 
 workflow ANNOTATION_STRUCTURAL {
     take:
@@ -14,7 +12,7 @@ workflow ANNOTATION_STRUCTURAL {
     ch_versions = Channel.empty()
     ch_braker_gff = Channel.empty()
 
-    // FIXED: Wrap the entire execution block inside the condition block.
+
     // If no RNA-seq is provided, BRAKER3 is completely ignored by the graph builder.
     if ( params.rnaseq_bam ) {
         

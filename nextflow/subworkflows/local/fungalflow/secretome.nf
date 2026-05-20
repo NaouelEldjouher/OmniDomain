@@ -3,7 +3,7 @@
 /*
  * Include the local SignalP process module
  */
-include { SIGNALP } from '../../../modules/local/signalp/main'
+include { SIGNALP } from '../../../modules/local/fungalflow/signalp/main'
 
 workflow SECRETOME {
     take:

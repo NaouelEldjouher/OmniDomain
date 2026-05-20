@@ -3,9 +3,9 @@
 /*
  * Include local multi-proteome comparison tools
  */
-include { ORTHOFINDER } from '../../../modules/local/orthofinder/main'
-include { IQTREE2     } from '../../../modules/local/iqtree2/main'
-include { CAFE5       } from '../../../modules/local/cafe5/main'
+#include { ORTHOFINDER } from '../../../modules/local/orthofinder/main'
+include { IQTREE2     } from '../../../modules/local/shared/iqtree2/main'
+include { CAFE5       } from '../../../modules/local/fungalflow/cafe5/main'
 
 workflow COMPARATIVE_FUNGAL {
     take:
@@ -15,11 +15,11 @@ workflow COMPARATIVE_FUNGAL {
     main:
     ch_versions = Channel.empty()
 
-    // 1. Cluster orthologous groups across all input fungal proteomes
-    ORTHOFINDER ( ch_all_proteomes )
-    ch_orthogroups = ORTHOFINDER.out.orthogroups
-    ch_computed_tree = ORTHOFINDER.out.species_tree
-    ch_versions = ch_versions.mix(ORTHOFINDER.out.versions)
+#    // 1. Cluster orthologous groups across all input fungal proteomes
+#    ORTHOFINDER ( ch_all_proteomes )
+#    ch_orthogroups = ORTHOFINDER.out.orthogroups
+#    ch_computed_tree = ORTHOFINDER.out.species_tree
+#    ch_versions = ch_versions.mix(ORTHOFINDER.out.versions)
 
     // 2. Build or refine a high-accuracy maximum-likelihood phylogenomic tree
     def target_tree = ch_species_tree ?: ch_computed_tree

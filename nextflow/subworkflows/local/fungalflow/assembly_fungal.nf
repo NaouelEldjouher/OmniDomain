@@ -1,7 +1,7 @@
 include { HIFIASM   } from '../../../modules/nf-core/hifiasm/main'
-include { UNICYCLER } from '../../../modules/local/unicycler/main'
+
 include { QUAST     } from '../../../modules/nf-core/quast/main'
-include { BUSCO     } from '../../../modules/local/busco/main'
+include { BUSCO     } from '../../../modules/local/shared/busco/main'
 
 workflow ASSEMBLY_FUNGAL {
     take:
@@ -14,7 +14,7 @@ workflow ASSEMBLY_FUNGAL {
     ch_final_assembly = Channel.empty()
 
     if ( params.longreads ) {
-        // Explicitly provide a 3-element tuple structure to match [meta, long_reads, ul_reads]
+
         ch_hifiasm_input = ch_longreads.map { meta, reads -> [ meta, reads, [] ] }
 
         // Supply structured tuple fallbacks to prevent the nf-core unpacker from looking up null paths
@@ -32,17 +32,9 @@ workflow ASSEMBLY_FUNGAL {
         ch_final_assembly = HIFIASM.out.primary_contigs
         ch_versions       = ch_versions.mix(HIFIASM.out.versions_hifiasm)
 
-    } else if ( params.shortreads ) {
-        ch_unicycler_input = ch_shortreads.map { meta, reads -> [ meta, reads, [] ] }
-
-        UNICYCLER ( ch_unicycler_input )
-        
-        ch_final_assembly = UNICYCLER.out.scaf
-        ch_versions       = ch_versions.mix(UNICYCLER.out.versions)
-    }
 
     // 2. Structural Validation Phase (Run QUAST metrics)
-    // FIXED: Replaced raw empty lists with valid tuple mock structures to pass validation
+
     ch_quast_gff_mock  = [ [id:'quast_gff_mock'], [] ]
     ch_quast_ref_mock  = [ [id:'quast_ref_mock'], [] ]
 
@@ -60,4 +52,5 @@ workflow ASSEMBLY_FUNGAL {
     quast_tsv = QUAST.out.tsv
     busco_txt = BUSCO.out.short_txt
     versions  = ch_versions
+    }
 }
