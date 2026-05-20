@@ -12,11 +12,10 @@ workflow QC_SHORTREAD {
     main:
     ch_versions = Channel.empty()
 
-    // FIX: Append an empty list '[]' to act as the missing path(adapter_fasta) inside the tuple
     ch_fastp_inputs = ch_raw_shortreads.map { meta, reads -> [ meta, reads, [] ] }
 
     // Run FastP adapter trimming and quality filtering
-    // Arguments match the 4 expected positions perfectly now
+
     FASTP (
         ch_fastp_inputs,
         false,

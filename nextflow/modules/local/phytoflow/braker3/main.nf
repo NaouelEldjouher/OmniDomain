@@ -1,3 +1,4 @@
+// Replaced MAKER with BRAKER3 for dfam independence
 process BRAKER3 {
     tag "$meta.id"
     label 'process_high'

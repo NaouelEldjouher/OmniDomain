@@ -47,7 +47,6 @@ workflow {
         error "PIPELINE ERROR: Please provide --shortreads or --longreads to run FungalFlow!"
     }
 
-    // FIXED: Extract the assembly output into the global workflow pool *outside* of the conditional scopes
     ch_draft_assembly = ASSEMBLY_FUNGAL.out.assembly
 
     // C. Structural Annotation Pipeline
