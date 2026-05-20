@@ -1,6 +1,6 @@
 
-include { SPADES    } from '../../../modules/local/fungalflow/spades/main'
-include { FLYE      } from '../../../modules/local/fungalflow/flye/main'
+include { SPADES    } from '../../../modules/local/shared/spades/main'
+include { FLYE      } from '../../../modules/local/nf-core/flye/main'
 include { QUAST     } from '../../../modules/nf-core/quast/main'
 include { BUSCO     } from '../../../modules/local/shared/busco/main'
 
