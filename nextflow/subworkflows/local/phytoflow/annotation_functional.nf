@@ -14,9 +14,8 @@ workflow ANNOTATION_FUNCTIONAL {
     EGGNOG( ch_proteins )
     ch_versions = ch_versions.mix( EGGNOG.out.versions )
 
-    // PlantTFDB / iTAK — transcription factor identification
-    // Note: iTAK container unavailable — placeholder output until v2.0
-
+    // PlantTFDB  dropped
+    // This part is moved to V02
 
     emit:
     eggnog_txt  = EGGNOG.out.annotations          // [ meta, *.emapper.annotations ]
