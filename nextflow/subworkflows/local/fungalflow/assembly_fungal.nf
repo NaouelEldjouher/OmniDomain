@@ -1,56 +1,67 @@
-include { HIFIASM   } from '../../../modules/nf-core/hifiasm/main'
 
+include { SPADES    } from '../../../modules/local/fungalflow/spades/main'
+include { FLYE      } from '../../../modules/local/fungalflow/flye/main'
 include { QUAST     } from '../../../modules/nf-core/quast/main'
 include { BUSCO     } from '../../../modules/local/shared/busco/main'
 
 workflow ASSEMBLY_FUNGAL {
     take:
-    ch_longreads  // channel: [ val(meta), path(fastq/fasta) ]
-    ch_shortreads // channel: [ val(meta), path(fastq) ]
-    ch_busco_db   // path
+    ch_shortreads  // channel: [ val(meta), [ path(R1), path(R2) ] ] or empty
+    ch_longreads   // channel: [ val(meta), path(reads.fastq.gz) ]   or empty
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions       = Channel.empty()
     ch_final_assembly = Channel.empty()
 
-    if ( params.longreads ) {
+// ── Mode 1: Short reads only — SPAdes ──────────────────────────────────
+// SPAdes --isolate: optimised for single-strain fungal isolates
+// Produces contigs.fasta — typical fungal assembly 50-500 contigs
+    if ( ch_shortreads ) {
+       def has_long_for_hybrid = ( ch_longreads != Channel.empty() )
+       SPADES( ch_shortreads, ch_longreads )
+       ch_final_assembly = SPADES.out.contigs
+       ch_versions       = ch_versions.mix( SPADES.out.versions )
 
-        ch_hifiasm_input = ch_longreads.map { meta, reads -> [ meta, reads, [] ] }
-
-        // Supply structured tuple fallbacks to prevent the nf-core unpacker from looking up null paths
-        ch_trio_mock = [ [id:'trio_mock'], [], [] ]
-        ch_hic_mock  = [ [id:'hic_mock'], [], [] ]
-        ch_bin_mock  = [ [id:'bin_mock'], [] ]
-
-        HIFIASM ( 
-            ch_hifiasm_input, 
-            ch_trio_mock, 
-            ch_hic_mock, 
-            ch_bin_mock 
-        )
-        
-        ch_final_assembly = HIFIASM.out.primary_contigs
-        ch_versions       = ch_versions.mix(HIFIASM.out.versions_hifiasm)
-
-
-    // 2. Structural Validation Phase (Run QUAST metrics)
-
-    ch_quast_gff_mock  = [ [id:'quast_gff_mock'], [] ]
-    ch_quast_ref_mock  = [ [id:'quast_ref_mock'], [] ]
-
-    QUAST ( ch_final_assembly, ch_quast_gff_mock, ch_quast_ref_mock )
-    
-    ch_quast_version = QUAST.out?.versions_quast ?: QUAST.out?.versions ?: Channel.empty()
-    ch_versions      = ch_versions.mix(ch_quast_version)
-
-    // 3. Biological Completeness Phase (Run BUSCO gene tracking)
-    BUSCO ( ch_final_assembly, 'genome', 'fungi_odb10' )
-    ch_versions = ch_versions.mix(BUSCO.out.versions)
-
-    emit:
-    assembly  = ch_final_assembly
-    quast_tsv = QUAST.out.tsv
-    busco_txt = BUSCO.out.short_txt
-    versions  = ch_versions
+       log.info "INFO: SPAdes assembly complete"
     }
+// ── Mode 2: Long reads only — Flye ─────────────────────────────────────
+// Flye --nano-hq: for R10.4 ONT chemistry (high quality)
+// Produces assembly.fasta — typically 10-50 contigs for fungal genomes
+     else if ( ch_longreads ) {
+          FLYE( ch_longreads )
+          ch_final_assembly = FLYE.out.assembly
+          ch_versions       = ch_versions.mix( FLYE.out.versions )
+          log.info "INFO: Flye assembly complete"
+     }
+// ── Validate assembly has content ───────────────────────────────────────
+      ch_final_assembly = ch_final_assembly
+          .map { meta, fasta ->
+              if ( !fasta || fasta.size() < 1000 ) {
+              error "PIPELINE ERROR: Assembly output is empty or too small (${fasta?.size()} bytes)"
+               }
+          return [ meta, fasta ]
+           }
+// ── Assembly QC ─────────────────────────────────────────────────────────
+// QUAST: N50, L50, contig count, total length
+// BUSCO fungi_odb10: gene space completeness
+// Expected: fungi_odb10 >90% for well-sequenced industrial fungi
+
+      QUAST(
+          ch_final_assembly,
+          [ [id:'no_ref'], [] ],   // no reference genome
+          [ [id:'no_gff'], [] ]    // no GFF annotation yet
+      )
+      ch_versions = ch_versions.mix( QUAST.out.versions )
+
+       BUSCO(
+           ch_final_assembly,
+           'fungi_odb10'
+       )
+        ch_versions = ch_versions.mix( BUSCO.out.versions )
+
+        emit:
+        assembly  = ch_final_assembly
+        quast_tsv = ch_quast_tsv
+        busco_txt = ch_busco_txt
+
 }
