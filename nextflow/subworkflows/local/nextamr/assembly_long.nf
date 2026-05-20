@@ -1,5 +1,3 @@
-// subworkflows/local/nextamr/assembly_long.nf
-
 include { FLYE } from '../../../modules/nf-core/flye/main'
 
 workflow ASSEMBLY_LONG {
@@ -9,12 +7,18 @@ workflow ASSEMBLY_LONG {
     main:
     ch_versions = Channel.empty()
 
-    // Run Flye. (Assuming task.ext.args in nextflow.config specifies --nano-hq or --pacbio-hifi)
-    FLYE ( ch_longreads, "--nano-hq" ) 
-    ch_versions = ch_versions.mix(FLYE.out.versions)
+    // 1. Run Flye by passing BOTH required arguments: 
+    // Argument 1: The input reads tuple channel
+    // Argument 2: The sequencing mode string value (matching nf-core standards)
+    FLYE ( ch_longreads, '--nano-hq' ) 
+
+    // 2. Safely capture the multi-channel output using array indices
+    ch_assembly = FLYE.out[0]
+    ch_graph    = FLYE.out[1]
+    ch_versions = ch_versions.mix(FLYE.out[4])
 
     emit:
-    assembly = FLYE.out.fasta // channel: [ val(meta), path(*.fasta) ]
-    graph    = FLYE.out.gfa   // channel: [ val(meta), path(*.gfa) ]
-    versions = ch_versions    // channel: [ path(versions.yml) ]
+    assembly = ch_assembly // channel: [ val(meta), path(*.fasta) ]
+    graph    = ch_graph    // channel: [ val(meta), path(*.gfa) ]
+    versions = ch_versions // channel: [ path(versions.yml) ]
 }

@@ -13,19 +13,15 @@ workflow QC_LONGREAD {
     main:
     ch_versions = Channel.empty()
 
-    // 1. Run Filtlong to drop low-quality bases and short reads
-    // Filtlong takes a tuple of [ meta, fastq ] and an optional short-read reference (passed as [] here)
-    FILTLONG (
-        ch_raw_longreads,
-        []
-    )
-    ch_filtered_reads = FILTLONG.out.reads
-    ch_versions       = ch_versions.mix(FILTLONG.out.versions)
+    ch_filtlong_inputs = ch_raw_longreads.map { meta, longreads -> [ meta, [], longreads ] }
 
-    // 2. Run NanoPlot on the clean, filtered reads to generate high-fidelity QC metrics
-    NANOPLOT (
-        ch_filtered_reads
-    )
+    FILTLONG ( ch_filtlong_inputs )
+    
+    // Index 0 is always the primary output data (reads), Index 1 is always the version yml
+    ch_filtered_reads = FILTLONG.out[0]
+    ch_versions       = ch_versions.mix(FILTLONG.out[1])
+
+    NANOPLOT ( ch_filtered_reads )
     ch_versions = ch_versions.mix(NANOPLOT.out.versions)
 
     emit:

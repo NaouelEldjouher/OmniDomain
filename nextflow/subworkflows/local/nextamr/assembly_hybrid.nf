@@ -1,6 +1,6 @@
 // subworkflows/local/nextamr/assembly_hybrid.nf
 
-include { UNICYCLER } from '../../../modules/local/unicycler/main'
+include { SPADES } from '../../../modules/local/spades/main'
 
 workflow ASSEMBLY_HYBRID {
     take:
@@ -10,11 +10,14 @@ workflow ASSEMBLY_HYBRID {
     main:
     ch_versions = Channel.empty()
 
-    // Run Unicycler providing both read sets
-    UNICYCLER ( ch_shortreads, ch_longreads )
-    ch_versions = ch_versions.mix(UNICYCLER.out.versions)
+    // Run SPAdes in hybrid metagenomic co-assembly mode
+    // We pass both short and long channels into metaSPAdes
+    SPADES ( ch_shortreads, ch_longreads )
+    
+    ch_assembly = SPADES.out.scaffolds
+    ch_versions = ch_versions.mix(SPADES.out.versions)
 
     emit:
-    assembly = UNICYCLER.out.gfa_or_fasta // channel: [ val(meta), path(*.fasta) ]
-    versions = ch_versions                // channel: [ path(versions.yml) ]
+    assembly = ch_assembly // channel: [ val(meta), path(*.fasta) ]
+    versions = ch_versions // channel: [ path(versions.yml) ]
 }

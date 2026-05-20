@@ -1,4 +1,4 @@
-// subworkflows/local/fungalflow/annotation_functional.nf
+// subworkflows/local/phytoflow/annotation_functional.nf
 
 /*
  * Include custom functional annotation local wrappers

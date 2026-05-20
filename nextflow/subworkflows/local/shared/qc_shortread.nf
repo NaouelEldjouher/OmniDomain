@@ -8,26 +8,30 @@ include { FASTP } from '../../../modules/nf-core/fastp/main'
 workflow QC_SHORTREAD {
     take:
     ch_raw_shortreads // channel: [ val(meta), path(reads) ] 
-                      // Supports both single-end [read] or paired-end [read_1, read_2]
 
     main:
     ch_versions = Channel.empty()
 
+    // FIX: Append an empty list '[]' to act as the missing path(adapter_fasta) inside the tuple
+    ch_fastp_inputs = ch_raw_shortreads.map { meta, reads -> [ meta, reads, [] ] }
+
     // Run FastP adapter trimming and quality filtering
-    // Arguments: channel, adapter_fasta (none/[]), save_trimmed_fail (false), save_merged (false)
+    // Arguments match the 4 expected positions perfectly now
     FASTP (
-        ch_raw_shortreads,
-        [],
+        ch_fastp_inputs,
+        false,
         false,
         false
     )
 
     ch_filtered_reads = FASTP.out.reads
-    ch_versions       = ch_versions.mix(FASTP.out.versions)
+    
+    // Safety check for versions channel property
+    if (FASTP.out.versions) { ch_versions = ch_versions.mix(FASTP.out.versions) }
 
     emit:
-    reads    = ch_filtered_reads // channel: [ val(meta), path(trimmed_reads) ]
-    json     = FASTP.out.json    // channel: [ val(meta), path(*.json) ] for dashboard parsing
-    html     = FASTP.out.html    // channel: [ val(meta), path(*.html) ] for MultiQC
-    versions = ch_versions       // channel: [ path(versions.yml) ]
+    reads    = ch_filtered_reads 
+    json     = FASTP.out.json    
+    html     = FASTP.out.html    
+    versions = ch_versions       
 }
