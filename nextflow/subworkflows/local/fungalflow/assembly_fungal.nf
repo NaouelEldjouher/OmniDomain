@@ -19,7 +19,7 @@ workflow ASSEMBLY_FUNGAL {
     if ( ch_shortreads ) {
        def has_long_for_hybrid = ( ch_longreads != Channel.empty() )
        SPADES( ch_shortreads, ch_longreads )
-       ch_final_assembly = SPADES.out.contigs
+       ch_final_assembly = SPADES.out.scaffolds
        ch_versions       = ch_versions.mix( SPADES.out.versions )
 
        log.info "INFO: SPAdes assembly complete"
@@ -46,22 +46,24 @@ workflow ASSEMBLY_FUNGAL {
 // BUSCO fungi_odb10: gene space completeness
 // Expected: fungi_odb10 >90% for well-sequenced industrial fungi
 
-      QUAST(
-          ch_final_assembly,
-          [ [id:'no_ref'], [] ],   // no reference genome
-          [ [id:'no_gff'], [] ]    // no GFF annotation yet
-      )
-      ch_versions = ch_versions.mix( QUAST.out.versions )
+QUAST(
+ch_final_assembly,
+[ [id:'no_ref'], [] ],
+[ [id:'no_gff'], [] ]    // no GFF annotation yet
+)
+ch_versions = ch_versions.mix( QUAST.out.versions_quast )
 
-       BUSCO(
-           ch_final_assembly,
-           'fungi_odb10'
-       )
-        ch_versions = ch_versions.mix( BUSCO.out.versions )
+BUSCO(
+ch_final_assembly,
+params.busco_mode ?: 'genome',
+params.busco_lineage ?: 'fungi_odb10'
+)
+ch_versions = ch_versions.mix( BUSCO.out.versions )
 
-        emit:
-        assembly  = ch_final_assembly
-        quast_tsv = ch_quast_tsv
-        busco_txt = ch_busco_txt
+emit:
+assembly  = ch_final_assembly
+quast_tsv = QUAST.out.tsv
+busco_txt = BUSCO.out.short_txt
+versions  = ch_versions
 
 }
