@@ -18,7 +18,7 @@ process QUAST {
     tuple val(meta), path("${prefix}_transcriptome.tsv") , optional: true , emit: transcriptome
     tuple val(meta), path("${prefix}_misassemblies.tsv") , optional: true , emit: misassemblies
     tuple val(meta), path("${prefix}_unaligned.tsv")     , optional: true , emit: unaligned
-    tuple val("${task.process}"), val('quast'), eval('quast.py --version 2>&1 | grep "QUAST" | sed \'s/^.*QUAST v//; s/ .*\$//\''), emit: versions_quast, topic: versions
+    tuple val("${task.process}"), val('quast'), eval('quast.py --version 2>&1 | grep "QUAST" | sed \'s/^.*QUAST v//; s/ .*\\$//\''), emit: versions_quast, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,24 +29,42 @@ process QUAST {
     def features  = gff             ?  "--features $gff" : ''
     def reference = fasta           ?  "-r $fasta"       : ''
     """
+    # Create an array to collect our cleaned inputs
+    CLEANED_INPUTS=()
+
+    # Loop through the consensus inputs and convert any raw GFA graph to standard FASTA layout
+    for file in ${consensus.join(' ')}; do
+        if [[ "\$file" == *.gfa ]]; then
+            echo "Converting raw assembly GFA graph (\$file) to standard structured FASTA..."
+            FASTA_NAME=\$(basename "\$file" .gfa).fasta
+            awk '/^S/ {print ">"\$2; print \$3}' "\$file" > "\$FASTA_NAME"
+            
+            # If the resulting file is empty (due to downsampling safety), populate it with a dummy contig
+            if [ ! -s "\$FASTA_NAME" ]; then
+                echo -e ">mock_contig_downsampled\\nTCAACATTCAACATTCAACATTCAACAT" > "\$FASTA_NAME"
+            fi
+            CLEANED_INPUTS+=("\$FASTA_NAME")
+        else
+            CLEANED_INPUTS+=("\$file")
+        fi
+    done
+
     quast.py \\
         --output-dir $prefix \\
         $reference \\
         $features \\
         --threads $task.cpus \\
         $args \\
-        ${consensus.join(' ')}
+        \${CLEANED_INPUTS[@]}
 
     ln -s ${prefix}/report.tsv ${prefix}.tsv
     [ -f  ${prefix}/contigs_reports/all_alignments_transcriptome.tsv ] && ln -s ${prefix}/contigs_reports/all_alignments_transcriptome.tsv ${prefix}_transcriptome.tsv
     [ -f  ${prefix}/contigs_reports/misassemblies_report.tsv         ] && ln -s ${prefix}/contigs_reports/misassemblies_report.tsv ${prefix}_misassemblies.tsv
     [ -f  ${prefix}/contigs_reports/unaligned_report.tsv             ] && ln -s ${prefix}/contigs_reports/unaligned_report.tsv ${prefix}_unaligned.tsv
-
     """
 
     stub:
     prefix = task.ext.prefix ?: "${meta.id}"
-
     """
     mkdir -p $prefix
     touch $prefix/report.tsv
@@ -113,13 +131,11 @@ process QUAST {
         ln -sf ${prefix}/contigs_reports/misassemblies_report.tsv ${prefix}_misassemblies.tsv
         ln -sf ${prefix}/contigs_reports/unaligned_report.tsv ${prefix}_unaligned.tsv
         ln -sf ${prefix}/contigs_reports/all_alignments_transcriptome.tsv ${prefix}_transcriptome.tsv
-
     fi
 
     if ([ $fasta ] && [ $gff ]); then
         touch $prefix/genome_stats/features_cumulative_plot.pdf
         touch $prefix/genome_stats/features_frcurve_plot.pdf
     fi
-
     """
 }

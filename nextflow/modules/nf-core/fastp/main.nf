@@ -21,6 +21,7 @@ process FASTP {
     tuple val(meta), path('*.fail.fastq.gz')  , optional:true, emit: reads_fail
     tuple val(meta), path('*.merged.fastq.gz'), optional:true, emit: reads_merged
     tuple val("${task.process}"), val('fastp'), eval('fastp --version 2>&1 | sed -e "s/fastp //g"'), emit: versions_fastp, topic: versions
+    path "versions.yml"                       , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -100,5 +101,11 @@ process FASTP {
     touch "${prefix}.fastp.json"
     touch "${prefix}.fastp.html"
     touch "${prefix}.fastp.log"
+
+   
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        fastp: stub_version
+    END_VERSIONS
     """
 }

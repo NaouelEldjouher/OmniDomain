@@ -33,3 +33,26 @@ Thumbs.db
 .idea/
 *.swp
 *:Zone.Identifier
+test_data/
+
+
+
+# Ignore result and data directories
+results_*/
+results/
+outputs/
+data/
+work/
+.nextflow*
+
+# Ignore common bioinformatics file formats
+*.bam
+*.bai
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.vcf
+*.gz
+*.fasta
+*.fai
