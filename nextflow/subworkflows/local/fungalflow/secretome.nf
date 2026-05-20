@@ -1,24 +1,22 @@
 // subworkflows/local/fungalflow/secretome.nf
 
-/*
- * Include the local SignalP process module
- */
-include { SIGNALP } from '../../../modules/local/fungalflow/signalp/main'
+include { PHOBIUS } from '../../../modules/local/fungalflow/phobius/main'
 
 workflow SECRETOME {
-    take:
-    ch_proteins // channel: [ val(meta), path(proteins.fasta) ]
+take:
+ch_proteins // channel: [ val(meta), path(proteins.fasta) ]
 
-    main:
-    ch_versions = Channel.empty()
+main:
+ch_versions = Channel.empty()
 
-    // Run SignalP to detect signal peptides and cleavage sites
-    SIGNALP ( ch_proteins )
-    
-    ch_secreted_fasta = SIGNALP.out.summary_fasta
-    ch_versions       = ch_versions.mix(SIGNALP.out.versions)
+// Phobius: signal peptide + transmembrane topology prediction
+// Public container — no license required
+// Replaces SignalP (academic license, no public container)
+// Output: proteins predicted to be secreted via classical pathway
+PHOBIUS( ch_proteins )
+ch_versions = ch_versions.mix( PHOBIUS.out.versions )
 
-    emit:
-    secreted_proteins = ch_secreted_fasta // channel: [ val(meta), path(*_summary.fasta) ]
-    versions          = ch_versions       // channel: [ path(versions.yml) ]
+emit:
+secreted_proteins = PHOBIUS.out.results  // [ meta, path(*.phobius.txt) ]
+versions          = ch_versions
 }
