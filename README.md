@@ -287,11 +287,7 @@ results/
  
 ## Citation
  
-If you use PhytoFlow in your research, please cite:
- 
-```
-El Djouher, N. (2026). OmniDomain: Unified Cross-Kingdom Genomics Platform.
-Zenodo. https://doi.org/10.5281/zenodo.14995561
+
 ```
  
 ---
