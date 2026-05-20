@@ -10,8 +10,8 @@ workflow ANNOTATION_STRUCTURAL {
     ch_scaffolds
     ch_transcriptome
     ch_proteins
-    do_helixer    // ← receives true/false from main.nf
-    do_maker      // ← receives true/false from main.nf
+    do_helixer   
+    do_maker      
 
     main:
     ch_versions    = Channel.empty()
@@ -23,7 +23,7 @@ workflow ANNOTATION_STRUCTURAL {
         log.info "INFO: Set --genome_type nuclear for annotation"
     }
 
-    if ( do_helixer ) {          // ← NOT params.run_helixer
+    if ( do_helixer ) {         
         HELIXER( ch_scaffolds )
         ch_helixer_gff = HELIXER.out.gff
         ch_versions    = ch_versions.mix( HELIXER.out.versions )
