@@ -13,7 +13,7 @@ workflow SCAFFOLDING {
     ch_versions          = Channel.empty()
     ch_current_scaffolds = ch_assembly  
     if ( params.hic_map ) {
-        log.info "INFO: Hi-C map provided — running YAHS"
+        log.info "INFO: Hi-C map provided — running YAHS" //Add INFO log messages
         YAHS( ch_assembly, ch_hic_map )
         ch_current_scaffolds = YAHS.out.scaffolds
         ch_versions          = ch_versions.mix( YAHS.out.versions )
@@ -22,7 +22,7 @@ workflow SCAFFOLDING {
     }
 
     if ( params.reference ) {
-        log.info "INFO: Reference provided — running RagTag"
+        log.info "INFO: Reference provided — running RagTag" //Add INFO log messages
         RAGTAG( ch_current_scaffolds, ch_ref )
         ch_current_scaffolds = RAGTAG.out.scaffolds
         ch_versions          = ch_versions.mix( RAGTAG.out.versions )
