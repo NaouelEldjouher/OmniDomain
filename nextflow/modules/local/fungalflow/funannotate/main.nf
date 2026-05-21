@@ -2,32 +2,34 @@ process FUNANNOTATE {
 tag "$meta.id"
 label 'process_high'
 
-container 'nextflowio/funannotate:latest'
-
 input:
 tuple val(meta), path(masked_fasta)              // masked assembly
 tuple val(meta_prot), path(protein_hints)        // optional proteins
 tuple val(meta_rna),  path(rnaseq_bam)           // optional RNA-seq BAM
 
 output:
-tuple val(meta), path("funannotate_out/*.gff3"),         emit: gff3
-tuple val(meta), path("funannotate_out/*.proteins.faa"), emit: proteins
+tuple val(meta), path("funannotate_out/predict_results/*.gff3")      , emit: gff3
+tuple val(meta), path("funannotate_out/predict_results/*.proteins.fa*"), emit: proteins
 path "versions.yml",                                     emit: versions
 
 when:
 task.ext.when == null || task.ext.when
 
 script:
-def prefix    = task.ext.prefix ?: "${meta.id}"
-def args      = task.ext.args   ?: ''
-def prot_arg  = protein_hints   ? "--protein_evidence ${protein_hints}" : ''
-def rna_arg   = rnaseq_bam      ? "--rna_bam ${rnaseq_bam}"            : ''
+def prefix   = task.ext.prefix ?: "${meta.id}"
+def args     = task.ext.args   ?: ''
+def prot_arg = ( protein_hints && protein_hints.name != 'no file' && protein_hints.size() > 0 )
+? "--protein_evidence ${protein_hints}" : ''
+def rna_arg  = ( rnaseq_bam && rnaseq_bam.name != 'no file' && rnaseq_bam.size() > 0 )
+? "--rna_bam ${rnaseq_bam}" : ''
 """
 #!/bin/bash
 set -eo pipefail
-
+# Step 1: Clean and sort assembly — required by Funannotate
+# Renames headers to short unique IDs, removes contigs < 500bp
+funannotate sort -i ${masked_fasta} -o sorted.fa --minlen 500
 funannotate predict \\
--i ${masked_fasta} \\
+-i sorted.fa \\
 -o funannotate_out \\
 -s "${prefix}" \\
 --cpus ${task.cpus} \\
@@ -44,14 +46,14 @@ END_VERSIONS
 stub:
 def prefix = task.ext.prefix ?: "${meta.id}"
 """
-mkdir -p funannotate_out
+mkdir -p funannotate_out/predict_results
 
-printf '##gff-version 3\\n' > funannotate_out/${prefix}.gff3
+printf '##gff-version 3\\n' > funannotate_out/predict_results/${prefix}.gff3
 printf 'contig_1\\tFunannotate\\tgene\\t1000\\t5000\\t.\\t+\\t.\\tID=gene1\\n' \
-        >> funannotate_out/${prefix}.gff3
+        >> funannotate_out/predict_results/${prefix}.gff3
 
     printf '>stub_protein_1\\nMSTARTPEPTIDE\\n' \
-> funannotate_out/${prefix}.proteins.faa
+> funannotate_out/predict_results/${prefix}.proteins.faa
 
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":
