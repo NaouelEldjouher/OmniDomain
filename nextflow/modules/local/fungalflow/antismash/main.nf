@@ -7,7 +7,7 @@ label 'process_high'
 container 'docker.io/antismash/standalone:7.1.0'
 
 input:
-tuple val(meta), path(assembly), path(gff)
+tuple val(meta), path(assembly)    // ← was path(gff), must match script variable
 
 output:
 tuple val(meta), path("antismash_out/"), emit: results
@@ -18,20 +18,33 @@ task.ext.when == null || task.ext.when
 
 script:
 def prefix = task.ext.prefix ?: "${meta.id}"
-def args   = task.ext.args   ?: '--taxon fungi --genefinding-tool none'
-def gff_arg = gff ? "--genbank-merge-gbk ${gff}" : ''
+def taxon  = task.ext.taxon  ?: 'fungi'
 """
 #!/bin/bash
 set -eo pipefail
 
+if [ ! -s "${assembly}" ]; then
+echo "ERROR: Assembly file is empty"
+exit 1
+fi
+
+NCONTIGS=\$(grep -c "^>" ${assembly} || echo 0)
+echo "INFO: Running antiSMASH on \$NCONTIGS contigs"
+
 antismash \\
-${assembly} \\
+--taxon ${taxon} \\
 --output-dir antismash_out \\
 --cpus ${task.cpus} \\
-${args}
+--genefinding-tool glimmerhmm \\
+${assembly}
 
-NCLUSTERS=\$(grep -c "Cluster" antismash_out/index.html 2>/dev/null || echo "unknown")
-echo "INFO: antiSMASH complete"
+if [ ! -d "antismash_out" ]; then
+echo "ERROR: antismash_out directory was not created"
+exit 1
+fi
+
+NCLUSTERS=\$(grep -c "cluster" antismash_out/index.html 2>/dev/null || echo 0)
+echo "INFO: antiSMASH complete — \$NCLUSTERS cluster references in index"
 
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":
@@ -42,7 +55,6 @@ END_VERSIONS
 stub:
 """
 mkdir -p antismash_out
-
 cat > antismash_out/index.html << 'HTML'
 <html><body>
 <p>Cluster 1: Type I PKS</p>
