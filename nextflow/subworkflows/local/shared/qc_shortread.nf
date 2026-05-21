@@ -15,7 +15,7 @@ ch_versions = Channel.empty()
 // Add [] as empty adapter_fasta — part of the input tuple (nf-core fastp)
 ch_fastp_input = ch_raw_shortreads
 .map { meta, reads ->
-def new_meta = meta + [single_end: false]
+def new_meta = [ *:meta, single_end: false ]
 [ new_meta, reads, [] ]
 }
 
