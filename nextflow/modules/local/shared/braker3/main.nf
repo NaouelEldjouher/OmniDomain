@@ -1,4 +1,4 @@
-// Replaced MAKER with BRAKER3 for dfam independence
+
 process BRAKER3 {
     tag "$meta.id"
     label 'process_high'
@@ -11,7 +11,7 @@ process BRAKER3 {
 
     output:
     tuple val(meta), path("braker/braker.gtf"),  emit: gff      // ← gtf not gff3
-    tuple val(meta), path("braker/braker.aa"),   emit: proteins  // bonus — predicted proteins
+    tuple val(meta), path("braker/braker.aa"),   emit: proteins
     path "versions.yml",                          emit: versions
 
     when:
@@ -20,7 +20,7 @@ process BRAKER3 {
     script:
     def prefix   = task.ext.prefix ?: "${meta.id}"
     def args     = task.ext.args   ?: ''
-    def prot_arg = proteins ? "--prot_seq=proteins_input.faa" : ''
+    def prot_arg = ( proteins && proteins.size() > 0 ) ? "--prot_seq=proteins_input.faa" : ''
     """
     #!/bin/bash
     set -eo pipefail
@@ -30,24 +30,29 @@ process BRAKER3 {
         exit 1
     fi
 
-    # Decompress proteins if gzipped
+    # Only process proteins if file actually provided and non-empty
+    if [ -n "${proteins}" ] && [ -s "${proteins}" ]; then
     if [[ "${proteins}" == *.gz ]]; then
-        gunzip -c ${proteins} > proteins_input.faa
+    gunzip -c ${proteins} > proteins_input.faa
     else
-        cp ${proteins} proteins_input.faa
+    cp ${proteins} proteins_input.faa
+    fi
+    PROT_ARG="--prot_seq=proteins_input.faa"
+    else
+    echo "INFO: No protein hints provided — running BRAKER3 ab initio"
+    PROT_ARG=""
     fi
 
     NSEQS=\$(grep -c "^>" ${fasta} || echo 0)
     echo "INFO: Running BRAKER3 on \$NSEQS sequences"
 
-    braker.pl \\
-        --genome=${fasta} \\
-        ${prot_arg} \\
-        --softmasking \\
-        --threads=${task.cpus} \\
-        --workingdir=braker \\
-        ${args}
-
+    braker.pl \
+    --genome=${fasta} \
+    \${PROT_ARG} \
+    --softmasking \
+    --threads=${task.cpus} \
+    --workingdir=braker \
+    ${args}
     echo "INFO: BRAKER3 complete"
     echo "INFO: Genes predicted: \$(grep -c '\\bgene\\b' braker/braker.gtf || echo 0)"
 
