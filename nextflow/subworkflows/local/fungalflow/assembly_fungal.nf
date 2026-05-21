@@ -33,11 +33,10 @@ ch_versions       = ch_versions.mix( SPADES.out.versions )
 
 // ── Mode 2: Flye — long reads only ─────────────────────────────────
 else if ( has_long ) {
-log.info "INFO: Flye assembler selected"
-
-FLYE( ch_longreads )
-ch_final_assembly = FLYE.out.assembly
-ch_versions       = ch_versions.mix( FLYE.out.versions )
+     log.info "INFO: Flye assembler selected"
+     FLYE( ch_longreads, '--nano-hq' )
+     ch_final_assembly = FLYE.out.fasta
+     ch_versions       = ch_versions.mix(FLYE.out.versions_flye)
 }
 
 // ── Validate ────────────────────────────────────────────────────────
@@ -55,7 +54,7 @@ ch_validated,
 [ [id:'no_ref'], [] ],
 [ [id:'no_gff'], [] ]
 )
-ch_versions = ch_versions.mix( QUAST.out.versions_quast )
+
 
 //BUSCO( ch_validated, 'genome', 'fungi_odb10' )
 //ch_versions = ch_versions.mix( BUSCO.out.versions )

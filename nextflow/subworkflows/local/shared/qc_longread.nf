@@ -8,25 +8,26 @@ include { NANOPLOT } from '../../../modules/nf-core/nanoplot/main'
 
 workflow QC_LONGREAD {
     take:
-    ch_raw_longreads // channel: [ val(meta), path(fastq) ]
+    ch_raw_longreads
 
     main:
     ch_versions = Channel.empty()
 
-    ch_filtlong_inputs = ch_raw_longreads.map { meta, longreads -> [ meta, [], longreads ] }
+    ch_filtlong_inputs = ch_raw_longreads.map { meta, reads -> [ meta, [], reads ] }
 
     FILTLONG ( ch_filtlong_inputs )
-    
-    // Index 0 is always the primary output data (reads), Index 1 is always the version yml
-    ch_filtered_reads = FILTLONG.out[0]
-    ch_versions       = ch_versions.mix(FILTLONG.out[1])
+    ch_versions = ch_versions.mix( FILTLONG.out.versions_filtlong )
 
-    NANOPLOT ( ch_filtered_reads )
-    ch_versions = ch_versions.mix(NANOPLOT.out.versions)
+// NanoPlot takes [ meta, [reads] ] — wrap reads in list
+    ch_nanoplot_input = FILTLONG.out.reads
+        .map { meta, reads -> [ meta, [ reads ] ] }
+
+    NANOPLOT( ch_nanoplot_input )
+    ch_versions = ch_versions.mix( NANOPLOT.out.versions )
 
     emit:
-    reads    = ch_filtered_reads // channel: [ val(meta), path(fastq) ]
-    png      = NANOPLOT.out.png   // channel: [ val(meta), path(png_plots) ]
-    html     = NANOPLOT.out.html  // channel: [ val(meta), path(html_report) ]
-    versions = ch_versions        // channel: [ path(versions.yml) ]
+    reads    = FILTLONG.out.reads
+    html     = NANOPLOT.out.html
+    txt      = NANOPLOT.out.txt     // [ meta, path(*.txt) ]
+    versions = ch_versions
 }

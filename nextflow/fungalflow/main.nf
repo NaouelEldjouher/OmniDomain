@@ -42,18 +42,30 @@ include { COMPARATIVE_FUNGAL } from '../subworkflows/local/fungalflow/comparativ
  * 3. MAIN WORKFLOW EXECUTION
  */
 workflow {
-// ── A. AUTO-DETECTION: determine assembly mode from inputs ──────────────
-def has_short  = params.shortreads  ? true : false
-def has_long   = params.longreads   ? true : false
+// ── A. AUTO-DETECTION ────────────────────────────────────────────────────
+def has_short  = params.shortreads ? true : false
+def has_long   = params.longreads  ? true : false
 def has_hybrid = ( has_short && has_long )
+
 if      ( has_hybrid ) log.info ">>> MODE: Hybrid — Illumina + ONT → SPAdes hybrid"
 else if ( has_short  ) log.info ">>> MODE: Short reads only — Illumina → SPAdes"
 else if ( has_long   ) log.info ">>> MODE: Long reads only — ONT → Flye"
 else error "PIPELINE ERROR: FungalFlow requires --shortreads and/or --longreads"
 
-log.info ">>> shortreads : ${params.shortreads ?: 'not provided'}"
-log.info ">>> longreads  : ${params.longreads  ?: 'not provided'}"
-log.info ">>> rnaseq_bam : ${params.rnaseq_bam ?: 'not provided'}"
+// ── B. OUTPUT DIRECTORY ──────────────────────────────────────────────────
+// sample_id comes from params (set by UI from TSV)
+// Fallback: extract from filename if not set
+def sample_id = params.sample_id
+?: ( has_short
+? ( params.shortreads =~ /([^\/]+?)(?:_\{R1,R2\}|_R1|_1\.fastq)/ )[0][1]
+: file(params.longreads).simpleName )
+
+log.info ">>> sample_id : ${sample_id}"
+log.info ">>> outdir    : ${params.base_outdir}/fungalflow/${sample_id}"
+log.info ">>> shortreads: ${params.shortreads ?: 'not provided'}"
+log.info ">>> longreads : ${params.longreads  ?: 'not provided'}"
+log.info ">>> rnaseq_bam: ${params.rnaseq_bam ?: 'not provided'}"
+
 
 
 // ── C. INPUT PARSING ─────────────────────────────────────────────────────
@@ -65,7 +77,11 @@ ch_shortreads = has_short
 
 ch_longreads = has_long
 ? Channel.fromPath( params.longreads, checkIfExists: true )
-.map { f -> [ [id: f.simpleName], f ] }
+.map { f ->
+
+def id = f.simpleName
+return [ [id: id], f ]
+}
 : Channel.empty()
 
 ch_rnaseq = params.rnaseq_bam
