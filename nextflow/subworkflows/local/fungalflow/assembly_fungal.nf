@@ -1,7 +1,11 @@
 include { SPADES } from '../../../modules/local/shared/spades/main'
 include { FLYE   } from '../../../modules/nf-core/flye/main'
 include { QUAST  } from '../../../modules/nf-core/quast/main'
-include { BUSCO  } from '../../../modules/local/shared/busco/main'
+// BUSCO disabled for local test — 200k read subset produces 9,958 contigs
+// which exceeds local memory limits for miniprot_align step
+// Re-enable on AWS with full dataset (27M reads, expected N50 ~100kb)
+// include { BUSCO } from '../../../modules/local/shared/busco/main'
+//include { BUSCO  } from '../../../modules/local/shared/busco/main'
 
 workflow ASSEMBLY_FUNGAL {
 take:
@@ -53,12 +57,12 @@ ch_validated,
 )
 ch_versions = ch_versions.mix( QUAST.out.versions_quast )
 
-BUSCO( ch_validated, 'fungi_odb10', 'genome' )
-ch_versions = ch_versions.mix( BUSCO.out.versions )
+//BUSCO( ch_validated, 'genome', 'fungi_odb10' )
+//ch_versions = ch_versions.mix( BUSCO.out.versions )
 
 emit:
 assembly  = ch_validated
 quast_tsv = QUAST.out.tsv
-busco    = BUSCO.out.short_txt
+busco_txt = Channel.empty()    // placeholder — BUSCO disabled for local test
 versions  = ch_versions
 }
