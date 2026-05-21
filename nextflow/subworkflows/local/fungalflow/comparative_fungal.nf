@@ -3,7 +3,7 @@
 /*
  * Include local multi-proteome comparison tools
  */
-include { ORTHOFINDER } from '../../../modules/local/orthofinder/main'
+include { ORTHOFINDER } from '../../../modules/local/shared/orthofinder/main'
 include { IQTREE2     } from '../../../modules/local/shared/iqtree2/main'
 include { CAFE5       } from '../../../modules/local/fungalflow/cafe5/main'
 
@@ -17,7 +17,7 @@ main:
     ch_versions = Channel.empty()
 
    // Step 1 — gene family clustering
-   ORTHOFINDER( ch_proteomes )
+   ORTHOFINDER( ch_all_proteomes )
    ch_versions = ch_versions.mix( ORTHOFINDER.out.versions )
 
   // Step 2 — species tree
