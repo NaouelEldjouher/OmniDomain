@@ -1,0 +1,6 @@
+# Force Unix line endings for all Nextflow and script files
+*.nf        text eol=lf
+*.config    text eol=lf
+*.sh        text eol=lf
+*.py        text eol=lf
+*.groovy    text eol=lf
