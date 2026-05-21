@@ -19,7 +19,9 @@ script:
 def prefix   = task.ext.prefix ?: "${meta.id}"
 def args     = task.ext.args   ?: '--isolate'
 // Only add --nanopore if long reads file is real and non-empty
-def ont_arg  = ( longreads && longreads.size() > 0 ) ? "--nanopore ${longreads}" : ""
+def ont_arg = ( longreads && longreads.toString() != '[]'
+&& longreads instanceof Path && longreads.size() > 0 )
+? "--nanopore ${longreads}" : ""
 // Switch to hybrid mode automatically if ONT reads provided
 def mode_arg = ont_arg ? "" : args   // --isolate incompatible with --nanopore
 """
@@ -57,10 +59,14 @@ stub:
 """
 mkdir -p spades_out
 
-# Stub produces a real FASTA — empty file triggers size validation error
-printf '>scaffold_1 length=50000 cov=45.2\\n'  > spades_out/scaffolds.fasta
-printf '>scaffold_2 length=35000 cov=48.7\\n' >> spades_out/scaffolds.fasta
-printf '>scaffold_3 length=22000 cov=51.1\\n' >> spades_out/scaffolds.fasta
+# Stub produces real FASTA with sequences — empty file triggers size validation
+python3 -c "
+import random
+bases = 'ATGC'
+for i in range(1, 4):
+print(f'>scaffold_{i} length=50000 cov=45.2')
+print(''.join(random.choice(bases) for _ in range(50000)))
+" > spades_out/scaffolds.fasta
 
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":
