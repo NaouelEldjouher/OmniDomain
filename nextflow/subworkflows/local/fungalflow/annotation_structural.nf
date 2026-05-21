@@ -3,6 +3,7 @@
 include { BRAKER3     } from '../../../modules/local/shared/braker3/main'
 include { FUNANNOTATE } from '../../../modules/local/fungalflow/funannotate/main'
 
+
 workflow ANNOTATION_STRUCTURAL {
 take:
 ch_masked_assembly  // [ val(meta), path(masked.fa) ]
@@ -14,39 +15,25 @@ ch_versions       = Channel.empty()
 ch_annotation_gff = Channel.empty()
 ch_proteins       = Channel.empty()
 
-// ── Funannotate — short reads and hybrid mode ─────────────────────────
-// All-in-one fungal annotation: ab initio + evidence + functional
-// Runs when short reads provided (Case 1 and Case 3)
-// Uses protein hints and RNA-seq when available
-if ( !params.longreads || params.shortreads ) {
-log.info "INFO: Funannotate enabled — short/hybrid read mode"
+// annotation_structural.nf — correct v1.0 design
+// Short reads / hybrid → Funannotate (nextgenusfs/funannotate:latest)
+// Long reads only      → BRAKER3
 
-FUNANNOTATE(
-ch_masked_assembly,
-ch_protein_hints,
-ch_rnaseq_bam
-)
+if ( !params.longreads || params.shortreads ) {
+log.info "INFO: Funannotate — short/hybrid read mode"
+FUNANNOTATE( ch_masked_assembly, ch_protein_hints, ch_rnaseq_bam )
 ch_annotation_gff = FUNANNOTATE.out.gff3
 ch_proteins       = FUNANNOTATE.out.proteins
 ch_versions       = ch_versions.mix( FUNANNOTATE.out.versions )
 
-// ── BRAKER3 — long reads only mode ───────────────────────────────────
-// Evidence-based prediction without Funannotate infrastructure
-// Runs when only ONT reads provided (Case 2)
 } else if ( params.longreads && !params.shortreads ) {
-log.info "INFO: BRAKER3 enabled — long read only mode"
-
-BRAKER3(
-ch_masked_assembly,
-ch_protein_hints
-)
+log.info "INFO: BRAKER3 — long read only mode"
+BRAKER3( ch_masked_assembly, ch_protein_hints )
 ch_annotation_gff = BRAKER3.out.gff
 ch_proteins       = BRAKER3.out.proteins
 ch_versions       = ch_versions.mix( BRAKER3.out.versions )
-
-} else {
-log.info "INFO: No annotation tool selected — check input params"
 }
+
 
 emit:
 gff      = ch_annotation_gff  // [ meta, path(*.gff3 or *.gtf) ]
