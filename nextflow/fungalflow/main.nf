@@ -1,7 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-
 /*
 * ============================================================================
 * OmniDomain — FungalFlow Pipeline
