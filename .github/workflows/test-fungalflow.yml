@@ -2,7 +2,7 @@ name: FungalFlow Pipeline Test
 
 on:
   push:
-    branches: [ fungalflow-test ]
+    branches: [ test-fungalflow ]
   pull_request:
     branches: [ main ]
 
@@ -17,6 +17,11 @@ jobs:
         uses: nf-core/setup-nextflow@v2
         
       - name: Check FungalFlow syntax
-        # This checks your specific pipeline files for errors
+        # We must point to the specific path where your main.nf lives
         run: |
-          nextflow run main.nf -preview
+          nextflow validate nextflow/fungalflow/main.nf
+          
+      - name: Pipeline Dry-Run
+        # This confirms that all modules/imports are correctly linked
+        run: |
+          nextflow run nextflow/fungalflow/main.nf -dry-run
