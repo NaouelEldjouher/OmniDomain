@@ -2,7 +2,7 @@
 /*
  * Include the official nf-core modules we installed earlier
  */
-include { FILTLONG } from '../../../modules/nf-core/filtlong/main'
+include { FILTLONG } from '../../../modules/local/shared/filtlong/main'
 include { NANOPLOT } from '../../../modules/nf-core/nanoplot/main'
 
 workflow QC_LONGREAD {

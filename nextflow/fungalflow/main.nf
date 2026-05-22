@@ -151,8 +151,6 @@ ANNOTATION_FUNCTIONAL( ANNOTATION_STRUCTURAL.out.proteins )
 // SignalP: signal peptide prediction → secreted proteins
 // Relevant for industrial enzyme discovery
 SECRETOME( ANNOTATION_STRUCTURAL.out.proteins )
-}
-
 // ── K. COMPARATIVE GENOMICS ──────────────────────────────────
 // OrthoFinder: gene family clustering across multiple fungal genomes
 // CAFE5: gene family expansion/contraction analysis
@@ -172,4 +170,5 @@ COMPARATIVE_FUNGAL( ch_collected_proteomes, ch_collected_gffs )
 } else {
 log.info "INFO: Comparative genomics skipped — use --run_comparative true to enable"
 log.info "INFO: Requires multiple samples submitted together"
+}
 }

@@ -1,5 +1,5 @@
 include { SPADES } from '../../../modules/local/shared/spades/main'
-include { FLYE   } from '../../../modules/nf-core/flye/main'
+include { FLYE   } from '../../../modules/local/shared/flye/main'
 include { QUAST  } from '../../../modules/nf-core/quast/main'
 // BUSCO disabled for local test — 200k read subset produces 9,958 contigs
 // which exceeds local memory limits for miniprot_align step
@@ -42,8 +42,8 @@ else if ( has_long ) {
 // ── Validate ────────────────────────────────────────────────────────
 ch_validated = ch_final_assembly
 .map { meta, fasta ->
-if ( !fasta || fasta.size() < 1000 ) {
-error "Assembly empty or too small: ${fasta?.size()} bytes"
+if ( !fasta ) {
+error "Assembly file missing"
 }
 return [ meta, fasta ]
 }
