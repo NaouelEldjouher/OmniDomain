@@ -1,5 +1,4 @@
 // subworkflows/local/shared/qc_longread.nf
-
 /*
  * Include the official nf-core modules we installed earlier
  */
