@@ -62,3 +62,8 @@ venv3/
 ui/omnidomain.db
 __pycache__/
 .DS_Store
+.idea/
+.pycharm/
+__pycache__/
+*.pyc
+.env
