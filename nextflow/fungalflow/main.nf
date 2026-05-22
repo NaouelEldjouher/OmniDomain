@@ -95,14 +95,8 @@ ch_protein_hints = params.protein_hints
 
 
 // ── D. QC ────────────────────────────────────────────────────────────────
-// FastP: adapter trimming + quality filtering for Illumina
-// Filtlong + NanoPlot: quality filtering + statistics for ONT
-if ( has_short ) {
 QC_SHORTREAD( ch_shortreads )
-}
-if ( has_long ) {
 QC_LONGREAD( ch_longreads )
-}
 ch_qc_short = has_short ? QC_SHORTREAD.out.reads : Channel.empty()
 ch_qc_long  = has_long  ? QC_LONGREAD.out.reads  : Channel.empty()
 // ── E. ASSEMBLY ──────────────────────────────────────────────────────────
