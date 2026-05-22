@@ -45,7 +45,7 @@ jobs:
           echo "Syntax check complete"
  
   # ── Job 2: Stub run — short reads (Illumina) ──────────────────────────────
-  stub_short_reads:
+  stub_illumina:
     name: Stub — Illumina short reads
     runs-on: ubuntu-latest
     needs: syntax
@@ -76,25 +76,22 @@ jobs:
  
       - name: Validate outputs exist
         run: |
-          if [ ! -d "results_ci" ]; then
-            echo "ERROR: Directory results_ci/ was not created. Check for Nextflow syntax errors."
-            exit 1
-          fi
-          echo "=== Output files ==="
-          find results_ci/ -type f | sort
-          COUNT=$(find results_ci/ -type f | wc -l)
+          # Output path follows: {base_outdir}/fungalflow/{sample_id}/
+          EXPECTED="results_ci/fungalflow/ci_niger"
+          find results_ci/ -type f 2>/dev/null | sort || echo "results_ci/ not found"
+          COUNT=$(find results_ci/ -type f 2>/dev/null | wc -l)
           echo "Total files: $COUNT"
-          [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
+         [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs in results_ci/" && exit 1)
       - name: Upload stub results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
+         if: always()
+          uses: actions/upload-artifact@v4
+          with:
           name: fungalflow-stub-illumina
           path: results_ci/
           retention-days: 3
  
   # ── Job 3: Stub run — long reads (ONT) ────────────────────────────────────
-  stub_long_reads:
+  stub_ont:
     name: Stub — ONT long reads
     runs-on: ubuntu-latest
     needs: syntax
@@ -107,11 +104,14 @@ jobs:
           version: ">=23.04.0"
  
       - name: Create stub test data
-        run: |
-          mkdir -p test_data
-          printf '@read1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip \
-            > test_data/aspergillus_fumigatus_ont.fastq.gz
- 
+         run: |
+         mkdir -p test_data
+         printf '@read1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip \
+         > test_data/aspergillus_fumigatus_ont.fastq.gz
+    
+    # Verify file was created
+    ls -lh test_data/
+    zcat test_data/aspergillus_fumigatus_ont.fastq.gz | head -2
       - name: FungalFlow stub — ONT mode
         run: |
           nextflow run nextflow/fungalflow/main.nf \
@@ -124,9 +124,13 @@ jobs:
  
       - name: Validate outputs exist
         run: |
-          COUNT=$(find results_ci/ -type f | wc -l)
+           EXPECTED="results_ci/fungalflow/ci_fumigatus"
+          echo "=== Expected output path: $EXPECTED ==="
+          find results_ci/ -type f 2>/dev/null | sort || echo "results_ci/ not found"
+          COUNT=$(find results_ci/ -type f 2>/dev/null | wc -l)
           echo "Total files: $COUNT"
           [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
+ 
  
       - name: Upload stub results
         if: always()
@@ -169,8 +173,10 @@ jobs:
  
       - name: Validate outputs exist
         run: |
-          COUNT=$(find results_ci/ -type f | wc -l)
-          [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs" && exit 1)
+          find results_ci/ -type f 2>/dev/null | sort || echo "results_ci/ not found"
+          COUNT=$(find results_ci/ -type f 2>/dev/null | wc -l)
+          echo "Total files: $COUNT"
+          [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
  
       - name: Upload stub results
         if: always()
