@@ -1,68 +1,65 @@
+"""
+OmniDomain — App Entry Point
+streamlit run ui/app.py
+"""
+import sys
+from pathlib import Path
+ui_dir = Path(__file__).resolve().parent
+if str(ui_dir) not in sys.path:
+    sys.path.insert(0, str(ui_dir))
+
 import streamlit as st
 import boto3
-import generator, validator, runner, reporter
-from dotenv import load_dotenv  
-from pathlib import Path        
+from dotenv import load_dotenv
+load_dotenv(ui_dir.parent / '.env')
 
+st.set_page_config(
+    page_title="OmniDomain",
+    page_icon="🧬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-base_dir = Path(__file__).resolve().parent.parent
-env_path = base_dir / '.env'
+# ── Login gate ────────────────────────────────────────────────────────────────
+from tabs.login import render as render_login
+if not render_login():
+    st.stop()
 
-
-st.set_page_config(page_title="AMR-Flow Cloud", layout="wide")
-
-# Sidebar 
+# ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.header("⚡ System Health")
+    st.markdown(f"👤 **{st.session_state.get('user_name','User')}**")
+    st.caption(st.session_state.get('user_email',''))
+    if st.button("Sign out", use_container_width=True):
+        for k in ["user_id","user_email","user_name","mode",
+                  "samples","file_map","starter_df","active_runs"]:
+            st.session_state.pop(k, None)
+        st.rerun()
+
+    st.divider()
+    st.markdown("**AWS**")
     try:
-        iam = boto3.client('sts').get_caller_identity()
-        st.success(f"AWS Identity: {iam['Arn'].split('/')[-1]}")
-    except:
-        st.error("AWS Status: Offline")
+        identity = boto3.client('sts').get_caller_identity()
+        st.success(f"✅ {identity['Arn'].split('/')[-1]}")
+    except Exception:
+        st.error("❌ No credentials")
 
-    with st.expander("🛠️ Architectural Specs"):
-        st.markdown("""
-        **Data Strategy:**
-        - Direct S3 Streaming (Stateless UI)
-        - Multipart Upload Optimization
-        
-        **Compute Strategy:**
-        - Nextflow Orchestration
-        - AWS Batch (Spot Instances)
-        - FusionFS Data Streaming
-        
-        **Design Patterns:**
-        - Pre-flight Validation
-        - Event-driven workflow ready
-        """)
+    st.divider()
+    st.markdown("**Pipeline**")
+    pipeline = st.selectbox(
+        "Pipeline",
+        ["FungalFlow","PhytoFlow","NextAMR"],
+        key="selected_pipeline",
+        label_visibility="collapsed"
+    )
 
-st.title("🧬 NextAMR Analysis Dashboard")
+# ── Tabs ──────────────────────────────────────────────────────────────────────
+from tabs import submit, monitor, results
 
+st.title("🧬 OmniDomain Genomics Platform")
+st.caption(f"Pipeline: **{pipeline}**")
 
+tabs = st.tabs(["1️⃣  Submit", "2️⃣  Monitor", "3️⃣  Results"])
 
-# Sidebar for AWS Health Check
-with st.sidebar:
-    st.header("AWS Status")
-    try:
-        iam = boto3.client('sts').get_caller_identity()
-        st.success(f"User: {iam['Arn'].split('/')[-1]}")
-    except:
-        st.error("Offline: No AWS Credentials Found")
-
-
-tabs = st.tabs([
-    "1. Upload Data", 
-    "2. Validate Sheet", 
-    "3. Launch Pipeline", 
-    "4. Monitor Logs",
-    "5. Results Dashboard"
-])
-
-with tabs[0]: generator.render_generator()
-with tabs[1]: validator.render_validator()
-with tabs[2]: runner.render_runner()
-with tabs[3]:
-    st.subheader("AWS Batch Execution")
-    st.link_button("Go to AWS Batch Console", "https://console.aws.amazon.com/batch/home")
-    st.info("Monitor 'Job Status' to see the Fargate nodes scaling.")
-with tabs[4]: reporter.render_reporter()
+with tabs[0]: submit.render(pipeline)
+with tabs[1]: monitor.render()
+with tabs[2]: results.render()
