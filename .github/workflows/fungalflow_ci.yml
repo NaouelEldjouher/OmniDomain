@@ -76,12 +76,15 @@ jobs:
  
       - name: Validate outputs exist
         run: |
+          if [ ! -d "results_ci" ]; then
+            echo "ERROR: Directory results_ci/ was not created. Check for Nextflow syntax errors."
+            exit 1
+          fi
           echo "=== Output files ==="
           find results_ci/ -type f | sort
           COUNT=$(find results_ci/ -type f | wc -l)
           echo "Total files: $COUNT"
           [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
- 
       - name: Upload stub results
         if: always()
         uses: actions/upload-artifact@v4
