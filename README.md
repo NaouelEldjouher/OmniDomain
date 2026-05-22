@@ -1,14 +1,61 @@
-# 🌱 PhytoFlow — OmniDomain Plant Genome Pipeline
- 
+# OmniDomain
+ A cloud-native multi-kingdom genomics platform. Assembles, annotates,
+and compares genomes for bacteria, fungi, and plants from a single unified infrastructure.
+* **Model:** Bring Your Own Cloud (BYOC)
+All compute runs in your AWS account. You pay AWS directly.
+OmniDomain provides the pipelines, not the servers.
 **HiFi-first plant genome assembly, annotation & comparative genomics**
+ ---
  
-Part of the [OmniDomain](https://github.com/NaouelEldjouher) 
- 
----
- 
-## Overview
- 
+## Pipelines
+* **🍄 FungalFlow:** Fungal Genome Assembly & Functional Annotation
+* **Organisms:** Aspergillus, Trichoderma, Fusarium, Penicillium, Candida
+* **Input:** Illumina / ONT / Hybrid
+* **Genome size:** 20–80 Mb
+### Analysis
+* **Assembly:** SPAdes (Illumina/Hybrid) or Flye (ONT)
+* **Structural annotation:**  Funannotate / Augustus
+* **Functional annotation:** eggNOG-mapper (GO, KEGG, COG)
+* **CAZyme annotation:** dbCAN (GH, GT, PL, CE, AA families)
+* **BGC detection:** antiSMASH 7 (PKS, NRPS, terpenes, RiPPs)
+* **Secretome prediction:** DeepSig (signal peptide detection)
+
+
+```bash
+# Short reads (Illumina)
+nextflow run nextflow/fungalflow/main.nf \
+    -c nextflow/nextflow.config \
+    -profile fungal_env \
+    --shortreads 'data/aspergillus_{R1,R2}.fastq.gz' \
+    --sample_id 'aspergillus_niger_case1' \
+    --base_outdir 'results' \
+    --eggnog_db_dir '/databases/eggnog' \
+    --dbcan_db '/databases/dbcan'
+
+# Long reads (ONT)
+nextflow run nextflow/fungalflow/main.nf \
+    -c nextflow/nextflow.config \
+    -profile fungal_env \
+    --longreads 'data/fumigatus_ont.fastq.gz' \
+    --sample_id 'aspergillus_fumigatus_case2' \
+    --base_outdir 'results'
+```
+
+🌱 PhytoFlow — Plant Genome Assembly & Annotation
 PhytoFlow is a Nextflow DSL2 pipeline for assembling and annotating plant genomes from PacBio HiFi reads. It auto-detects the appropriate analysis mode from your inputs — no manual tool selection required.
+
+* **Organisms:** Arabidopsis, wheat, barley, tomato, maize, Brassica
+* **Input:** PacBio HiFi
+* **Genome size:** 100 Mb – 16 Gb
+###Analysis:
+
+* **Assembly:** Hifiasm (HiFi-optimised)
+* **Scaffolding:** YAHS (Hi-C) or RagTag (reference-guided)
+* **Structural annotation:** Helixer (deep learning) or BRAKER3 ETP
+* **NBS-LRR resistance genes:** NLR-Annotator v2
+* **Functional annotation:** eggNOG-mapper
+
+
  
 | Mode | Trigger | What runs |
 |---|---|---|
@@ -18,13 +65,9 @@ PhytoFlow is a Nextflow DSL2 pipeline for assembling and annotating plant genome
  
 ---
  
-## Quick Start
+## Run PhytoFlow:
  
 ```bash
-# Clone the repository
-git clone https://github.com/NaouelEldjouher/OmniDomain
-cd OmniDomain
- 
 # Organelle assembly (chloroplast / mitochondrion)
 nextflow run nextflow/phytoflow/main.nf \
     -c nextflow/nextflow.config \
