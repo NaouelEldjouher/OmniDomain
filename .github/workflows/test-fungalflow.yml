@@ -1,7 +1,4 @@
-- name: Pipeline Dry-Run
-       
-        run: |
-          nextflow run nextflow/fungalflow/main.nf -dry-run
+name: FungalFlow Pipeline Test
 
 on:
   push:
@@ -20,11 +17,9 @@ jobs:
         uses: nf-core/setup-nextflow@v2
         
       - name: Check FungalFlow syntax
-        # We must point to the specific path where your main.nf lives
         run: |
-          nextflow validate nextflow/fungalflow/main.nf
+          nextflow compile nextflow/fungalflow/main.nf
           
       - name: Pipeline Dry-Run
-        # This confirms that all modules/imports are correctly linked
         run: |
           nextflow run nextflow/fungalflow/main.nf -dry-run
