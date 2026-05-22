@@ -93,19 +93,14 @@ jobs:
     needs: syntax
     steps:
       - uses: actions/checkout@v4
- 
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v2
         with:
           version: ">=23.04.0"
- 
       - name: Create stub test data
         run: |
           mkdir -p test_data
           printf '@read1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip > test_data/aspergillus_fumigatus_ont.fastq.gz
-    
-    # Verify file was created
-
       - name: FungalFlow stub — ONT mode
         run: |
           nextflow run nextflow/fungalflow/main.nf \
@@ -115,13 +110,10 @@ jobs:
             --base_outdir 'results_ci' \
             -profile fungal_env \
             2>&1 | tail -30
- 
       - name: Validate outputs exist
         run: |
           COUNT=$(find results_ci/ -type f 2>/dev/null | wc -l)
           [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
- 
- 
       - name: Upload stub results
         if: always()
         uses: actions/upload-artifact@v4
