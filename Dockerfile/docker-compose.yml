@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=omni
+      - POSTGRES_PASSWORD=omnipass
+      - POSTGRES_DB=omnidb
+    ports:
+      - "5432:5432"
+
+  streamlit:
+    build: .
+    ports:
+      - "8501:8501"
+    depends_on:
+      - postgres
+    env_file:            
+      - .env              
+      # This acts as a fallback, but .env overrides it
+      - DATABASE_URL=postgresql://omni:omnipass@postgres:5432/omnidb

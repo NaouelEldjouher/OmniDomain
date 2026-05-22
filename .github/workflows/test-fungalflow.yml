@@ -1,0 +1,22 @@
+name: FungalFlow Pipeline Test
+
+on:
+  push:
+    branches: [ fungalflow-test ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install Nextflow
+        uses: nf-core/setup-nextflow@v2
+        
+      - name: Check FungalFlow syntax
+        # This checks your specific pipeline files for errors
+        run: |
+          nextflow run main.nf -preview
