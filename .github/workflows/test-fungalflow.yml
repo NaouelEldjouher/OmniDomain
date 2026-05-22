@@ -1,4 +1,7 @@
-name: FungalFlow Pipeline Test
+- name: Pipeline Dry-Run
+       
+        run: |
+          nextflow run nextflow/fungalflow/main.nf -dry-run
 
 on:
   push:
