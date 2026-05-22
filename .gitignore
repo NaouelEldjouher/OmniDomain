@@ -55,4 +55,10 @@ work/
 *.vcf
 *.gz
 *.fasta
-*.fai
+*.fai.env
+__pycache__/
+.pytest_cache/
+venv3/
+ui/omnidomain.db
+__pycache__/
+.DS_Store
