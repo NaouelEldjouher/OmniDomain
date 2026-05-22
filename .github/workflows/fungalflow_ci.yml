@@ -19,16 +19,16 @@ on:
       - 'nextflow/modules/local/shared/**'
 
 jobs:
+
   syntax:
     name: Syntax check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Nextflow
-        uses: nf-core/setup-nextflow@v2
+      - uses: nf-core/setup-nextflow@v2
         with:
           version: ">=23.04.0"
-      - name: Check main.nf parses without error
+      - name: Check main.nf parses
         run: |
           nextflow run nextflow/fungalflow/main.nf \
             -preview \
@@ -45,34 +45,41 @@ jobs:
     needs: syntax
     steps:
       - uses: actions/checkout@v4
-      - name: Install Nextflow
-        uses: nf-core/setup-nextflow@v2
+      - uses: nf-core/setup-nextflow@v2
         with:
           version: ">=23.04.0"
       - name: Create stub test data
         run: |
           mkdir -p test_data
-          printf '@read1\nACGT\n+\nIIII\n' | gzip > test_data/aspergillus_niger_illumina_R1.fastq.gz
-          printf '@read1\nACGT\n+\nIIII\n' | gzip > test_data/aspergillus_niger_illumina_R2.fastq.gz
-      - name: FungalFlow stub — Illumina mode
+          printf '@r1\nACGT\n+\nIIII\n' | gzip \
+            > test_data/aspergillus_niger_illumina_R1.fastq.gz
+          printf '@r1\nACGT\n+\nIIII\n' | gzip \
+            > test_data/aspergillus_niger_illumina_R2.fastq.gz
+      - name: FungalFlow stub — Illumina
         run: |
           nextflow run nextflow/fungalflow/main.nf \
             -stub-run \
             --shortreads 'test_data/aspergillus_niger_illumina_{R1,R2}.fastq.gz' \
-            --sample_id 'ci_niger_illumina' \
+            --sample_id 'ci_niger' \
             --base_outdir 'results_ci' \
             -profile fungal_env \
             2>&1 | tail -30
-      - name: Validate outputs exist
+      - name: Validate stub ran successfully
         run: |
-          COUNT=$(find results_ci/ -type f 2>/dev/null | wc -l)
-          [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
-      - name: Upload stub results
+          # Check processes completed in work dir
+          SUCCEEDED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
+            | grep -c "^0$" || echo 0)
+          FAILED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
+            | grep -cv "^0$" || echo 0)
+          echo "Processes succeeded: $SUCCEEDED"
+          echo "Processes failed: $FAILED"
+          [ "$SUCCEEDED" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+          [ "$FAILED" -eq 0 ]    || (echo "ERROR: $FAILED process(es) failed" && exit 1)
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: fungalflow-stub-illumina
-          path: results_ci/
+          path: work/
           retention-days: 3
 
   stub_ont:
@@ -81,33 +88,38 @@ jobs:
     needs: syntax
     steps:
       - uses: actions/checkout@v4
-      - name: Install Nextflow
-        uses: nf-core/setup-nextflow@v2
+      - uses: nf-core/setup-nextflow@v2
         with:
           version: ">=23.04.0"
       - name: Create stub test data
         run: |
           mkdir -p test_data
-          printf '@read1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip > test_data/aspergillus_fumigatus_ont.fastq.gz
-      - name: FungalFlow stub — ONT mode
+          printf '@r1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip \
+            > test_data/aspergillus_fumigatus_ont.fastq.gz
+      - name: FungalFlow stub — ONT
         run: |
           nextflow run nextflow/fungalflow/main.nf \
             -stub-run \
             --longreads 'test_data/aspergillus_fumigatus_ont.fastq.gz' \
-            --sample_id 'ci_fumigatus_ont' \
+            --sample_id 'ci_fumigatus' \
             --base_outdir 'results_ci' \
             -profile fungal_env \
             2>&1 | tail -30
-      - name: Validate outputs exist
+      - name: Validate stub ran successfully
         run: |
-          COUNT=$(find results_ci/ -type f 2>/dev/null | wc -l)
-          [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
-      - name: Upload stub results
+          SUCCEEDED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
+            | grep -c "^0$" || echo 0)
+          FAILED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
+            | grep -cv "^0$" || echo 0)
+          echo "Processes succeeded: $SUCCEEDED"
+          echo "Processes failed: $FAILED"
+          [ "$SUCCEEDED" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+          [ "$FAILED" -eq 0 ]    || (echo "ERROR: $FAILED process(es) failed" && exit 1)
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: fungalflow-stub-ont
-          path: results_ci/
+          path: work/
           retention-days: 3
 
   stub_hybrid:
@@ -116,8 +128,7 @@ jobs:
     needs: syntax
     steps:
       - uses: actions/checkout@v4
-      - name: Install Nextflow
-        uses: nf-core/setup-nextflow@v2
+      - uses: nf-core/setup-nextflow@v2
         with:
           version: ">=23.04.0"
       - name: Create stub test data
@@ -126,7 +137,7 @@ jobs:
           printf '@r1\nACGT\n+\nIIII\n' | gzip > test_data/hybrid_R1.fastq.gz
           printf '@r1\nACGT\n+\nIIII\n' | gzip > test_data/hybrid_R2.fastq.gz
           printf '@r1\nACGTACGT\n+\nIIIIIIII\n' | gzip > test_data/hybrid_ont.fastq.gz
-      - name: FungalFlow stub — Hybrid mode
+      - name: FungalFlow stub — Hybrid
         run: |
           nextflow run nextflow/fungalflow/main.nf \
             -stub-run \
@@ -136,14 +147,19 @@ jobs:
             --base_outdir 'results_ci' \
             -profile fungal_env \
             2>&1 | tail -30
-      - name: Validate outputs exist
+      - name: Validate stub ran successfully
         run: |
-          COUNT=$(find results_ci/ -type f 2>/dev/null | wc -l)
-          [ "$COUNT" -gt 0 ] || (echo "ERROR: no outputs produced" && exit 1)
-      - name: Upload stub results
+          SUCCEEDED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
+            | grep -c "^0$" || echo 0)
+          FAILED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
+            | grep -cv "^0$" || echo 0)
+          echo "Processes succeeded: $SUCCEEDED"
+          echo "Processes failed: $FAILED"
+          [ "$SUCCEEDED" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+          [ "$FAILED" -eq 0 ]    || (echo "ERROR: $FAILED process(es) failed" && exit 1)
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: fungalflow-stub-hybrid
-          path: results_ci/
+          path: work/
           retention-days: 3
