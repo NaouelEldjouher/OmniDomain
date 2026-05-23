@@ -17,7 +17,7 @@ workflow QC_LONGREAD {
 
     FILTLONG ( ch_filtlong_inputs )
     
-    // Index 0 is always the primary output data (reads), Index 1 is always the version yml
+
     ch_filtered_reads = FILTLONG.out[0]
     ch_versions       = ch_versions.mix(FILTLONG.out[1])
 
