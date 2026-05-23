@@ -66,10 +66,10 @@ jobs:
           echo "Exit code: $?"
       - name: Check outputs
         run: |
-          SUCCEEDED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
-            | grep -c "^0$" || echo "0")
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
           echo "Processes succeeded: $SUCCEEDED"
-          test "$SUCCEEDED" -gt 0 || (echo "ERROR: no processes ran" && exit 1)
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -102,10 +102,10 @@ jobs:
           echo "Exit code: $?"
       - name: Check outputs
         run: |
-          SUCCEEDED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
-            | grep -c "^0$" || echo "0")
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
           echo "Processes succeeded: $SUCCEEDED"
-          test "$SUCCEEDED" -gt 0 || (echo "ERROR: no processes ran" && exit 1)
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -141,10 +141,10 @@ jobs:
           echo "Exit code: $?"
       - name: Check outputs
         run: |
-          SUCCEEDED=$(find work/ -name ".exitcode" -exec cat {} \; 2>/dev/null \
-            | grep -c "^0$" || echo "0")
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
           echo "Processes succeeded: $SUCCEEDED"
-          test "$SUCCEEDED" -gt 0 || (echo "ERROR: no processes ran" && exit 1)
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
