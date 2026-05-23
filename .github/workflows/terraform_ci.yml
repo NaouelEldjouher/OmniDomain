@@ -1,0 +1,41 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [ main, 'feature/terraform' ]
+    paths:
+      - 'terraform/**'
+      - 'docker/**'
+      - '.github/workflows/terraform_ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+      - 'docker/**'
+
+jobs:
+  validate:
+    name: Terraform validate + fmt
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.0"
+
+      - name: Terraform init
+        run: terraform -chdir=terraform init -backend=false
+
+      - name: Terraform format check
+        run: terraform -chdir=terraform fmt -check -recursive
+
+      - name: Terraform validate
+        run: terraform -chdir=terraform validate
+
+      - name: Dockerfile lint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: docker/Dockerfile
+          ignore: DL3018,DL4006
