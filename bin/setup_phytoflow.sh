@@ -131,3 +131,4 @@ echo "    nlr_assets    = '${DB_ROOT}/nlr/NLR_Annotator_v2_assets'"
 echo "    checkm2_db    = '${DB_ROOT}/checkm2'"
 
 print_footer
+

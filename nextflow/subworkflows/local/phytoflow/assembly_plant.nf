@@ -2,7 +2,7 @@
 
 include { HIFIASM          } from '../../../modules/nf-core/hifiasm/main'
 include { QUAST            } from '../../../modules/nf-core/quast/main'
-include { MINIMAP2_ALIGN   } from '../../../modules/local//shared/minimap2/main'
+include { MINIMAP2_ALIGN   } from '../../../modules/local/shared/minimap2/main'
 include { SAMTOOLS_COVERAGE } from '../../../modules/local/shared/samtools/main'
 include { BUSCO            } from '../../../modules/local/shared/busco/main'
 
@@ -63,12 +63,8 @@ workflow ASSEMBLY_PLANT {
     ch_versions = Channel.empty()
 
     // ── 1. HIFIASM ──────────────────────────────────────────────────────────
-    // Best-in-class HiFi assembler — supports standard, Hi-C phasing, trio modes
-    // Mandatory 3-element long-read input: [ meta, reads, ultra_long_reads ]
     ch_hifiasm_reads = ch_longreads.map { meta, reads -> [ meta, reads, [] ] }
 
-    // Flatten Hi-C nested list [ meta, [R1, R2] ] → [ meta, R1, R2 ]
-    // Falls back to empty mock tuple when no Hi-C reads are provided
     ch_hifiasm_hic = ch_hic_reads
         .map { meta, reads -> [ meta, reads[0], reads[1] ] }
         .ifEmpty( [ [id:'hic_mock'], [], [] ] )
@@ -78,14 +74,9 @@ workflow ASSEMBLY_PLANT {
     ch_bin_mock  = Channel.value( [ [id:'bin_mock'],  []     ] )
 
     HIFIASM( ch_hifiasm_reads, ch_trio_mock, ch_hifiasm_hic, ch_bin_mock )
-    ch_versions = ch_versions.mix( HIFIASM.out.versions_hifiasm )
+    ch_versions = ch_versions.mix( HIFIASM.out.versions )
 
     // ── 2. PRIMARY CONTIG FILTER ────────────────────────────────────────────
-    // HIFIASM emits multiple GFA files matching the glob:
-    //   plant.p_ctg.gfa    ← primary assembly    (keep this)
-    //   plant.bp.p_ctg.gfa ← backup/alt assembly (discard)
-    //   plant.hic.p_ctg.gfa ← Hi-C phased        (if Hi-C mode)
-    // All downstream processes must receive exactly one file
     ch_primary_gfa = HIFIASM.out.primary_contigs.map { meta, files ->
         def primary = files instanceof List
             ? files.find { !it.name.contains('.bp.') } ?: files.first()
@@ -94,16 +85,11 @@ workflow ASSEMBLY_PLANT {
     }
 
     // ── 3. GFA → FASTA CONVERSION ───────────────────────────────────────────
-    // Convert GFA graph format → FASTA sequence format
-    // Done once here — all downstream processes (QUAST, BUSCO, minimap2,
-    // RepeatMasker, Helixer) reuse this FASTA
     GFA_TO_FASTA( ch_primary_gfa )
     ch_assembly_fasta = GFA_TO_FASTA.out.fasta
     ch_versions       = ch_versions.mix( GFA_TO_FASTA.out.versions )
 
     // ── 4. ASSEMBLY QC — QUAST ──────────────────────────────────────────────
-    // Assembly statistics: N50, L50, contig count, total length, gaps
-    // GFF and reference are optional — pass empty mock channels
     ch_quast_gff_mock = Channel.value( [ [id:'quast_gff_mock'], [] ] )
     ch_quast_ref_mock = Channel.value( [ [id:'quast_ref_mock'], [] ] )
 
@@ -111,24 +97,10 @@ workflow ASSEMBLY_PLANT {
     // ch_versions = ch_versions.mix( QUAST.out.versions )
 
     // ── 5. ASSEMBLY QC — BUSCO ──────────────────────────────────────────────
-    // Gene space completeness using embryophyta_odb10 lineage
-    // IMPORTANT: 0% BUSCO is correct and expected for organelle assemblies
-    // All 1,614 BUSCO genes are nuclear-encoded — they don't exist in organelles
-    // High BUSCO scores (>90%) expected for complete nuclear genome assemblies
     BUSCO( ch_assembly_fasta, 'genome', 'embryophyta_odb10' )
     ch_versions = ch_versions.mix( BUSCO.out.versions )
 
     // ── 6. COVERAGE DEPTH VALIDATION ────────────────────────────────────────
-    // Map original HiFi reads back to the assembly to validate:
-    //   - Organelle chloroplast: expect 100-500x coverage
-    //   - Organelle mitochondrion: expect 20-100x coverage
-    //   - Nuclear chromosomes: expect uniform coverage matching input depth
-    //   - Zero-coverage contigs = assembly artifacts → investigate
-    //   - Low MapQ regions = repetitive sequences (expected in organelle IRs)
-    //
-    // .join() pairs reads and assembly by meta.id:
-    //   input: [ meta, reads ]  +  [ meta, fasta ]
-    //   output: [ meta, reads, fasta ] — matches MINIMAP2_ALIGN 3-element input
     ch_map_inputs = ch_longreads.join( ch_assembly_fasta )
 
     MINIMAP2_ALIGN( ch_map_inputs )

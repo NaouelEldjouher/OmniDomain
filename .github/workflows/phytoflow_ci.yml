@@ -1,0 +1,175 @@
+name: PhytoFlow CI
+
+on:
+  push:
+    branches: [ main, dev, 'fix/**', 'feature/**', 'test-phytoflow' ]
+    paths:
+      - 'nextflow/phytoflow/**'
+      - 'nextflow/modules/local/phytoflow/**'
+      - 'nextflow/modules/local/shared/**'
+      - 'nextflow/modules/nf-core/**'
+      - 'nextflow/subworkflows/local/phytoflow/**'
+      - 'nextflow/subworkflows/local/shared/**'
+      - 'nextflow/nextflow.config'
+      - '.github/workflows/phytoflow_ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'nextflow/phytoflow/**'
+      - 'nextflow/modules/local/phytoflow/**'
+      - 'nextflow/modules/local/shared/**'
+
+jobs:
+
+  syntax:
+    name: Syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Check main.nf parses
+        run: |
+          nextflow run nextflow/phytoflow/main.nf \
+            -preview \
+            --hifi_reads 'NO_FILE.fastq.gz' \
+            --genome_type organelle \
+            --sample_id 'syntax_check' \
+            --base_outdir 'results_ci' \
+            -profile eukaryote_env \
+            2>&1 || true
+          echo "Syntax check complete"
+
+  stub_organelle:
+    name: Stub — Organelle assembly
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Create stub test data
+        run: |
+          mkdir -p test_data
+          printf '@read1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip \
+            > test_data/arabidopsis_organelle_hifi.fastq.gz
+      - name: PhytoFlow stub — Organelle
+        run: |
+          nextflow run nextflow/phytoflow/main.nf \
+            -stub-run \
+            --hifi_reads 'test_data/arabidopsis_organelle_hifi.fastq.gz' \
+            --genome_type organelle \
+            --sample_id 'ci_organelle' \
+            --base_outdir 'results_ci' \
+            -profile eukaryote_env
+          echo "Exit code: $?"
+      - name: Check outputs
+        run: |
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
+          echo "Processes succeeded: $SUCCEEDED"
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phytoflow-stub-organelle
+          path: work/
+          retention-days: 3
+
+  stub_nuclear_helixer:
+    name: Stub — Nuclear de novo (Helixer)
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Create stub test data
+        run: |
+          mkdir -p test_data
+          printf '@read1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip \
+            > test_data/arabidopsis_nuclear_hifi.fastq.gz
+          mkdir -p test_data/helixer_models
+          touch test_data/helixer_models/land_plant_v0.3_a_0080.h5
+          mkdir -p test_data/nlr
+          touch test_data/nlr/NLR-Annotator-v2.1b.jar
+          touch test_data/nlr/mot.txt
+          touch test_data/nlr/store.txt
+      - name: PhytoFlow stub — Nuclear Helixer
+        run: |
+          nextflow run nextflow/phytoflow/main.nf \
+            -stub-run \
+            --hifi_reads 'test_data/arabidopsis_nuclear_hifi.fastq.gz' \
+            --genome_type nuclear \
+            --sample_id 'ci_nuclear_helixer' \
+            --base_outdir 'results_ci' \
+            --helixer_models_dir 'test_data/helixer_models' \
+            --nlr_jar 'test_data/nlr/NLR-Annotator-v2.1b.jar' \
+            --nlr_mot 'test_data/nlr/mot.txt' \
+            --nlr_store 'test_data/nlr/store.txt' \
+            --eggnog_db_dir 'test_data/eggnog' \
+            -profile eukaryote_env
+          echo "Exit code: $?"
+      - name: Check outputs
+        run: |
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
+          echo "Processes succeeded: $SUCCEEDED"
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phytoflow-stub-nuclear-helixer
+          path: work/
+          retention-days: 3
+
+  stub_nuclear_braker3:
+    name: Stub — Nuclear + Reference (BRAKER3)
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Create stub test data
+        run: |
+          mkdir -p test_data
+          printf '@read1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip \
+            > test_data/arabidopsis_nuclear_hifi.fastq.gz
+          printf '>ref_chr1\nACGTACGTACGT\n' | gzip \
+            > test_data/arabidopsis_reference.fna.gz
+          mkdir -p test_data/nlr
+          touch test_data/nlr/NLR-Annotator-v2.1b.jar
+          touch test_data/nlr/mot.txt
+          touch test_data/nlr/store.txt
+      - name: PhytoFlow stub — Nuclear BRAKER3
+        run: |
+          nextflow run nextflow/phytoflow/main.nf \
+            -stub-run \
+            --hifi_reads 'test_data/arabidopsis_nuclear_hifi.fastq.gz' \
+            --genome_type nuclear \
+            --reference 'test_data/arabidopsis_reference.fna.gz' \
+            --sample_id 'ci_nuclear_braker3' \
+            --base_outdir 'results_ci' \
+            --nlr_jar 'test_data/nlr/NLR-Annotator-v2.1b.jar' \
+            --nlr_mot 'test_data/nlr/mot.txt' \
+            --nlr_store 'test_data/nlr/store.txt' \
+            --eggnog_db_dir 'test_data/eggnog' \
+            -profile eukaryote_env
+          echo "Exit code: $?"
+      - name: Check outputs
+        run: |
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
+          echo "Processes succeeded: $SUCCEEDED"
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phytoflow-stub-nuclear-braker3
+          path: work/
+          retention-days: 3

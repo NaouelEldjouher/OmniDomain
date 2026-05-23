@@ -2,7 +2,7 @@
 // subworkflows/local/plantflow/annotation_structural.nf
 // ============================================================================
 
-include { HELIXER } from '../../../modules/local/helixer/phytoflow/main'
+include { HELIXER } from '../../../modules/local/phytoflow/helixer/main'
 include { BRAKER3 } from '../../../modules/local/phytoflow/braker3/main'
 
 workflow ANNOTATION_STRUCTURAL {

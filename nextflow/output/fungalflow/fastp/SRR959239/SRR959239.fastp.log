@@ -1,0 +1,48 @@
+Detecting adapter sequence for read1...
+>Nextera_LMP_Read1_External_Adapter | >Illumina Multiplexing Index Sequencing Primer
+GATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+
+Detecting adapter sequence for read2...
+No adapter detected for read2
+
+Read1 before filtering:
+total reads: 25000
+total bases: 2450000
+Q20 bases: 2406165(98.2108%)
+Q30 bases: 2333923(95.2622%)
+
+Read2 before filtering:
+total reads: 25000
+total bases: 2450000
+Q20 bases: 2375302(96.9511%)
+Q30 bases: 2322665(94.8027%)
+
+Read1 after filtering:
+total reads: 24070
+total bases: 2346840
+Q20 bases: 2319233(98.8237%)
+Q30 bases: 2251820(95.9512%)
+
+Read2 after filtering:
+total reads: 24070
+total bases: 2347087
+Q20 bases: 2322095(98.9352%)
+Q30 bases: 2274097(96.8902%)
+
+Filtering result:
+reads passed filter: 48140
+reads failed due to low quality: 1628
+reads failed due to too many N: 72
+reads failed due to too short: 160
+reads with adapter trimmed: 3567
+bases trimmed due to adapters: 42269
+
+Duplication rate: 0.04%
+
+Insert size peak (evaluated by paired-end reads): 111
+
+JSON report: SRR959239.fastp.json
+HTML report: SRR959239.fastp.html
+
+fastp --in1 SRR959239_R1.fastq.gz --in2 SRR959239_R2.fastq.gz --out1 SRR959239_R1.fastp.fastq.gz --out2 SRR959239_R2.fastp.fastq.gz --json SRR959239.fastp.json --html SRR959239.fastp.html --thread 4 --detect_adapter_for_pe 
+fastp v0.23.4, time used: 3 seconds
