@@ -2,7 +2,7 @@
 // subworkflows/local/plantflow/secondary_metabolites.nf
 // ============================================================================
 
-include { NLR_ANNOTATOR } from '../../../modules/local/nlr_annotator/phytoflow//main'
+include { NLR_ANNOTATOR } from '../../../modules/local/phytoflow/nlr_annotator/main'
 
 workflow SECONDARY_METABOLITES {
     take:
