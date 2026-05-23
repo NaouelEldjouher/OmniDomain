@@ -121,3 +121,51 @@ def _log_status(s, run_id: str, status: str, message: str = None):
         """),
         {"log_id": log_id, "run_id": run_id, "status": status, "message": message}
     )
+
+def mark_submitted(run_id: str, job_id: str, job_name: str, resume: bool = False):
+    """Update run status to SUBMITTED after AWS Batch job created."""
+    with session() as s:
+        s.execute(
+            text("""
+                UPDATE runs SET
+                    status = 'SUBMITTED',
+                    job_id = :job_id,
+                    job_name = :job_name,
+                    submitted_at = NOW()
+                WHERE run_id = :run_id
+            """),
+            {"run_id": run_id, "job_id": job_id, "job_name": job_name}
+        )
+        _log_status(s, run_id, "SUBMITTED", f"job_id={job_id}")
+
+
+def update_status(run_id: str, status: str, message: str = None):
+    """Update run status — called by monitor tab polling AWS Batch."""
+    with session() as s:
+        completed = status in ("SUCCEEDED", "FAILED")
+        s.execute(
+            text("""
+                UPDATE runs SET
+                    status = :status,
+                    completed_at = CASE WHEN :completed THEN NOW() ELSE completed_at END
+                WHERE run_id = :run_id
+            """),
+            {"run_id": run_id, "status": status, "completed": completed}
+        )
+        _log_status(s, run_id, status, message)
+
+
+def record_upload(run_id: str, filename: str, s3_uri: str, size_bytes: int):
+    """Track individual file uploads for audit trail."""
+    upload_id = str(uuid.uuid4())
+    with session() as s:
+        s.execute(
+            text("""
+                INSERT INTO uploads
+                    (upload_id, run_id, filename, s3_uri, size_bytes, uploaded_at)
+                VALUES
+                    (:upload_id, :run_id, :filename, :s3_uri, :size_bytes, NOW())
+            """),
+            {"upload_id": upload_id, "run_id": run_id,
+             "filename": filename, "s3_uri": s3_uri, "size_bytes": size_bytes}
+        )

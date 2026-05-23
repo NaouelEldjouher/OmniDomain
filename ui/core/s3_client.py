@@ -4,7 +4,7 @@ Handles all S3 operations: presigned URLs, existence checks, listing results.
 
 Key design decisions:
 - Never pass file bytes through Streamlit server — use presigned URLs
-- Browser uploads directly to S3 (bypasses 200MB Streamlit limit)
+- Files upload via Streamlit server → boto3 → S3 (max 200MB per file)
 - All paths follow: s3://{bucket}/{pipeline}/{sample_id}/{phase}/{tool}/
 """
 
