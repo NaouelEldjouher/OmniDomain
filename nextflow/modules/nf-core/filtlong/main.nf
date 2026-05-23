@@ -37,5 +37,7 @@ process FILTLONG {
     """
     printf "@stub\nACGT\n+\nIIII\n" | gzip > ${prefix}.filtered.fastq.gz
     touch ${prefix}.log
+    echo "\"${task.process}\":" > versions.yml
+    echo "    filtlong: stub" >> versions.yml
     """
 }
