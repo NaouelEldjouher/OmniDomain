@@ -24,7 +24,6 @@ test_data/
 .terraform/
 *.tfstate
 *.tfstate.backup
-.terraform.lock.hcl
 
 # === System & Editor Files ===
 .DS_Store
@@ -56,3 +55,4 @@ work/
 *.gz
 *.fasta
 *.faivenv3/
+venv3/
