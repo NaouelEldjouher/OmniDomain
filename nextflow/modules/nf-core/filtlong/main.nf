@@ -13,7 +13,7 @@ process FILTLONG {
     output:
     tuple val(meta), path("*.fastq.gz"), emit: reads
     tuple val(meta), path("*.log")     , emit: log
-    tuple val("${task.process}"), val('filtlong'), eval('filtlong --version | sed -e "s/Filtlong v//g"'), topic: versions, emit: versions_filtlong
+    path "versions.yml"                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
