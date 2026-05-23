@@ -1,6 +1,6 @@
 // subworkflows/local/plantflow/comparative_plant.nf
 
-include { ORTHOFINDER } from '../../../modules/local/phytoflow/orthofinder/main'
+include { ORTHOFINDER } from '../../../modules/local/shared/orthofinder/main'
 include { MCSCANX     } from '../../../modules/local/phytoflow/mcscanx/main'
 
 workflow COMPARATIVE_PLANT {
