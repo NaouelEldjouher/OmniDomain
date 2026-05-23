@@ -1,5 +1,5 @@
 include { SPADES } from '../../../modules/local/shared/spades/main'
-include { FLYE   } from '../../../modules/local/shared/flye/main'
+include { FLYE   } from '../../../modules/nf-core/flye/main'
 include { QUAST  } from '../../../modules/nf-core/quast/main'
 
 workflow ASSEMBLY_FUNGAL {
