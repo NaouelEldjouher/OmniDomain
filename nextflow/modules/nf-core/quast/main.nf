@@ -87,6 +87,8 @@ process QUAST {
     touch $prefix/icarus_viewers/contig_size_viewer.html
 
     ln -s $prefix/report.tsv ${prefix}.tsv
+    echo "\"${task.process}\":" > versions.yml
+    echo "    quast: stub" >> versions.yml
 
     if [ $fasta ]; then
         touch $prefix/basic_stats/NGx_plot.pdf
