@@ -35,7 +35,7 @@ process FILTLONG {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    echo "" | gzip > ${prefix}.fastq.gz
+    printf "@stub\nACGT\n+\nIIII\n" | gzip > ${prefix}.fastq.gz
     touch ${prefix}.log
     """
 }
