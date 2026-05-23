@@ -56,3 +56,4 @@ work/
 *.fasta
 *.faivenv3/
 venv3/
+.env
