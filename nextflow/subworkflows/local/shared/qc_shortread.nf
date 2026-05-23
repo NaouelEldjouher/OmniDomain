@@ -10,7 +10,7 @@ workflow QC_SHORTREAD {
 
     def ch_fastp_input = ch_raw_shortreads
         .map { meta, reads ->
-            def new_meta = [ *:meta, single_end: false ]
+            def new_meta = meta + [ single_end: false ]
             [ new_meta, reads, [] ]
         }
 
