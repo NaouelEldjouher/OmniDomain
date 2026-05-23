@@ -13,7 +13,7 @@ include { COMPARATIVE_FUNGAL    } from '../subworkflows/local/fungalflow/compara
 
 workflow {
 
-    def has_short  = params.shortreads ? true : false
+    def has_short  = (params.shortreads || params.shortreads_r1) ? true : false
     def has_long   = params.longreads  ? true : false
     def has_hybrid = has_short && has_long
 
@@ -26,8 +26,12 @@ workflow {
     log.info ">>> sample_id : ${sample_id}"
 
     def ch_shortreads = has_short
-        ? Channel.fromFilePairs( params.shortreads, checkIfExists: true )
-            .map { id, reads -> [ [id: id], reads ] }
+        ? ( params.shortreads_r1
+            ? Channel.of( [ [id: params.sample_id ?: 'sample'],
+                            [ file(params.shortreads_r1, checkIfExists: true),
+                              file(params.shortreads_r2, checkIfExists: true) ] ] )
+            : Channel.fromFilePairs( params.shortreads, checkIfExists: true )
+                .map { id, reads -> [ [id: id], reads ] } )
         : Channel.empty()
 
     def ch_longreads = has_long
