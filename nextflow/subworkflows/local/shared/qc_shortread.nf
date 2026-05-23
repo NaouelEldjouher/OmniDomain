@@ -8,13 +8,12 @@ workflow QC_SHORTREAD {
     main:
     ch_versions = Channel.empty()
 
-    def ch_fastp_input = ch_raw_shortreads
-        .map { meta, reads ->
-            def new_meta = meta + [ single_end: false ]
-            [ new_meta, reads, [] ]
-        }
-
-    FASTP( ch_fastp_input, false, false, false )
+    FASTP(
+        ch_raw_shortreads,
+        [],
+        false,
+        false
+    )
     ch_versions = ch_versions.mix( FASTP.out.versions )
 
     emit:
