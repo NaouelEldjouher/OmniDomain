@@ -104,46 +104,84 @@ if should_run "bracken"; then
     fi
 fi
 
+ 
 # =============================================================================
-# HUMAnN3 Databases
-# Used for: functional pathway annotation of metagenomes
-# ChocoPhlAn: ~15GB — marker gene database
-# UniRef90:   ~20GB — protein function database
+# CheckM2 Database
+# Used for: MAG quality assessment (completeness + contamination)
+# Size: ~3GB
+# Pass to pipeline: --checkm2_db /path/to/checkm2/
 # =============================================================================
-section "HUMAnN3 Databases  (~35GB)"
-
-if should_run "humann3"; then
-    HUMANN3DB="${DB_ROOT}/humann3"
-    mkdir -p "$HUMANN3DB"
-
-    if already_exists "${HUMANN3DB}/chocophlan" && \
-       already_exists "${HUMANN3DB}/uniref"; then
-        warn "HUMAnN3 databases already exist — skipping ($(du -sh $HUMANN3DB | cut -f1))"
+section "CheckM2 Database  (~3GB)"
+ 
+if should_run "checkm2"; then
+    CHECKM2="${DB_ROOT}/checkm2"
+    mkdir -p "$CHECKM2"
+ 
+    if already_exists "${CHECKM2}/CheckM2_database/uniref100.KO.1.dmnd"; then
+        warn "CheckM2 already exists — skipping ($(du -sh $CHECKM2 | cut -f1))"
     else
-        log "Downloading HUMAnN3 databases (~35GB)..."
+        log "Downloading CheckM2 database (~3GB)..."
         docker run --rm \
-            -v "${HUMANN3DB}:/humann3_db" \
-            biobakery/humann:latest \
-            bash -c "
-                humann_databases --download chocophlan full /humann3_db
-                humann_databases --download uniref uniref90_diamond /humann3_db
-            " 2>&1 | tee -a "$LOG_FILE"
-
-        log "HUMAnN3 databases complete"
+            -v "${CHECKM2}:/checkm2_db" \
+            quay.io/biocontainers/checkm2:1.0.1--pyh7cba7a3_0 \
+            checkm2 database --download --path /checkm2_db \
+            2>&1 | tee -a "$LOG_FILE"
+ 
+        log "CheckM2 complete"
+        log "Pass to pipeline: --checkm2_db ${CHECKM2}"
     fi
 fi
-
+ 
+# =============================================================================
+# ResFinder Database
+# Used for: AMR gene detection in MAGs
+# Size: ~200MB
+# Pass to pipeline: --resfinder_db /path/to/resfinder_db/
+# =============================================================================
+section "ResFinder Database  (~200MB)"
+ 
+if should_run "resfinder"; then
+    RESFINDERDB="${DB_ROOT}/resfinder/resfinder_db"
+    mkdir -p "${DB_ROOT}/resfinder"
+ 
+    if already_exists "${RESFINDERDB}"; then
+        warn "ResFinder database already exists — skipping"
+    else
+        log "Cloning ResFinder database from CGE..."
+        git clone \
+            https://git@bitbucket.org/genomicepidemiology/resfinder_db.git \
+            "${RESFINDERDB}" \
+            2>&1 | tee -a "$LOG_FILE"
+ 
+        log "Indexing ResFinder database..."
+        cd "${RESFINDERDB}"
+        python INSTALL.py
+        cd -
+ 
+        log "ResFinder complete"
+        log "Pass to pipeline: --resfinder_db ${RESFINDERDB}"
+    fi
+fi
+ 
 # =============================================================================
 # Summary
 # =============================================================================
 echo ""
-echo "── Metacflow Databases Status ───────────────────────────────"
-print_status "Kraken2"       "${DB_ROOT}/kraken2"   "hash.k2d"
-print_status "Bracken"       "${DB_ROOT}/kraken2"   "database150mers.kmer_distrib"
-print_status "HUMAnN3"       "${DB_ROOT}/humann3"   "chocophlan"
+echo "── MetaCflow Databases Status ───────────────────────────────"
+print_status "Kraken2 standard" "${DB_ROOT}/kraken2"      "hash.k2d"
+print_status "Kraken2 mini"     "${DB_ROOT}/kraken2_mini" "hash.k2d"
+print_status "Bracken"          "${DB_ROOT}/kraken2"      "database150mers.kmer_distrib"
+print_status "CheckM2"          "${DB_ROOT}/checkm2"      "CheckM2_database/uniref100.KO.1.dmnd"
+print_status "ResFinder"        "${DB_ROOT}/resfinder"    "resfinder_db"
 echo ""
-echo "── nextflow.config params (add when Metacflow is built) ─────"
-echo "    kraken2_db    = '${DB_ROOT}/kraken2'"
-echo "    humann3_db    = '${DB_ROOT}/humann3'"
+echo "── Pass to MetaCflow pipeline ───────────────────────────────"
+echo "    --kraken2_db  '${DB_ROOT}/kraken2'"
+echo "    --checkm2_db  '${DB_ROOT}/checkm2'"
+echo "    --resfinder_db '${DB_ROOT}/resfinder/resfinder_db'"
+echo ""
+echo "── Note on Prokka ───────────────────────────────────────────"
+echo "    Prokka downloads its own databases at runtime."
+echo "    No pre-download needed."
+ 
 
 print_footer
