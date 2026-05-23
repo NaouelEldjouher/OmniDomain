@@ -32,7 +32,7 @@ def render():
         if not files:
             st.warning(
                 f"No results at "
-                f"s3://{RESULTS_BUCKET}/results/{pipeline}/{selected}/"
+                f"s3://{RESULTS_BUCKET}/{pipeline}/{selected}/"
             )
             return
 

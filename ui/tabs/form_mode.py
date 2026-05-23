@@ -8,7 +8,7 @@ import streamlit as st
 import boto3
 import os
 import pandas as pd
-from core.db import create_run, mark_submitted, record_upload
+from core.db import create_run, mark_submitted
 from core.nextflow_builder import build_command
 from core.s3_client import file_exists, COMPUTE_BUCKET
 
