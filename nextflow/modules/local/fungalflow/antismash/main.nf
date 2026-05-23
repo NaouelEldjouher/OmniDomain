@@ -1,61 +1,70 @@
+// modules/local/fungalflow/antismash/main.nf
+
 process ANTISMASH {
-    tag "$meta.id"
-    // Do NOT set shell here — use shebang in script block instead
+tag "$meta.id"
+label 'process_high'
 
-    input:
-    tuple val(meta), path(fasta), path(gff, stageAs: "input_annotation/*")
+container 'docker.io/antismash/standalone:7.1.0'
 
-    output:
-    tuple val(meta), path("antismash_output"), emit: results
-    path "versions.yml"                      , emit: versions
+input:
+tuple val(meta), path(assembly)    // ← was path(gff), must match script variable
 
-    script:
-def prefix        = task.ext.prefix ?: "${meta.id}"
-def args          = task.ext.args   ?: '--taxon plants'
-def primary_fasta = fasta instanceof List
-    ? ( fasta.find { !it.name.contains('.bp.') } ?: fasta.first() )
-    : fasta
-def input_fasta   = primary_fasta.name.endsWith('.gfa')
-    ? "converted_input.fasta"
-    : "${primary_fasta}"
-def genefinding   = (gff && gff.size() > 0 && !gff.isDirectory())
-    ? "--genefinding-gff3 ${gff}"
-    : "--genefinding-tool prodigal"
+output:
+tuple val(meta), path("antismash_out/"), emit: results
+path "versions.yml",                     emit: versions
+
+when:
+task.ext.when == null || task.ext.when
+
+script:
+def prefix = task.ext.prefix ?: "${meta.id}"
+def taxon  = task.ext.taxon  ?: 'fungi'
 """
 #!/bin/bash
+set -eo pipefail
 
-# Convert GFA to FASTA if needed
-if [[ "${primary_fasta.name}" == *.gfa ]]; then
-    awk '/^S/ {print ">"\$2; print \$3}' ${primary_fasta} > converted_input.fasta
+if [ ! -s "${assembly}" ]; then
+echo "ERROR: Assembly file is empty"
+exit 1
 fi
 
-# antiSMASH 7 with prodigal requires sequences >= 1000bp
-# Filter out short contigs that cause the "only one sequence" error
-awk '
-    /^>/ { header=\$0; seq=""; next }
-    { seq=seq\$0 }
-    /^>/ || EOF { if (length(seq) >= 1000) print header"\\n"seq }
-' ${input_fasta} > antismash_input.fasta
-
-# Fallback — if filtering removed everything, use original
-if [ ! -s antismash_input.fasta ]; then
-    cp ${input_fasta} antismash_input.fasta
-fi
-
-NSEQS=\$(grep -c "^>" antismash_input.fasta || echo 0)
-echo "INFO: Sequences for antiSMASH: \$NSEQS"
+NCONTIGS=\$(grep -c "^>" ${assembly} || echo 0)
+echo "INFO: Running antiSMASH on \$NCONTIGS contigs"
 
 antismash \\
-    ${genefinding} \\
-    --cpus ${task.cpus} \\
-    --output-dir antismash_output \\
-    --allow-long-headers \\
-    ${args} \\
-    antismash_input.fasta
+--taxon ${taxon} \\
+--output-dir antismash_out \\
+--cpus ${task.cpus} \\
+--genefinding-tool glimmerhmm \\
+${assembly}
+
+if [ ! -d "antismash_out" ]; then
+echo "ERROR: antismash_out directory was not created"
+exit 1
+fi
+
+NCLUSTERS=\$(grep -c "cluster" antismash_out/index.html 2>/dev/null || echo 0)
+echo "INFO: antiSMASH complete — \$NCLUSTERS cluster references in index"
 
 cat <<-END_VERSIONS > versions.yml
 "${task.process}":
-    antismash: \$(antismash --version 2>&1 | sed 's/antiSMASH //')
+antismash: \$(antismash --version 2>&1 | head -1)
+END_VERSIONS
+"""
+
+stub:
+"""
+mkdir -p antismash_out
+cat > antismash_out/index.html << 'HTML'
+<html><body>
+<p>Cluster 1: Type I PKS</p>
+<p>Cluster 2: Terpene</p>
+</body></html>
+HTML
+
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+antismash: stub_7.1.0
 END_VERSIONS
 """
 }

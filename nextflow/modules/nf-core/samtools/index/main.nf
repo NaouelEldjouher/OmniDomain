@@ -12,7 +12,7 @@ process SAMTOOLS_INDEX {
 
     output:
     tuple val(meta), path("*.{bai,csi,crai}"), emit: index
-    tuple val("${task.process}"), val('samtools'), eval("samtools version | sed '1!d;s/.* //'"), emit: versions_samtools, topic: versions
+    path "versions.yml"                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

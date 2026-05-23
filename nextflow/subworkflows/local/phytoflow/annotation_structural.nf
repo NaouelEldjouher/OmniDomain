@@ -3,7 +3,7 @@
 // ============================================================================
 
 include { HELIXER } from '../../../modules/local/helixer/phytoflow/main'
-include { BRAKER3 } from '../../../modules/local/braker3/phytoflow/main'
+include { BRAKER3 } from '../../../modules/local/phytoflow/braker3/main'
 
 workflow ANNOTATION_STRUCTURAL {
     take:

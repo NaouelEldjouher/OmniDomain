@@ -1,49 +1,35 @@
-/*
- * Include your custom eukaryotic annotation wrappers from modules/local/
- */
-include { BRAKER3     } from '../../../modules/local/braker3/main'
-include { FUNANNOTATE } from '../../../modules/local/funannotate/main'
+include { BRAKER3     } from '../../../modules/local/shared/braker3/main'
+include { FUNANNOTATE } from '../../../modules/local/fungalflow/funannotate/main'
 
 workflow ANNOTATION_STRUCTURAL {
+
     take:
-    ch_masked_assembly // channel: [ val(meta), path(masked_genome.fa) ]
-    ch_protein_hints   // channel: path(proteins.fa)
-    ch_rnaseq_bam      // channel: [ val(meta), path(aligned_rna.bam) ]
+    ch_masked_assembly
+    ch_protein_hints
+    ch_rnaseq_bam
 
     main:
-    ch_versions = Channel.empty()
-    ch_braker_gff = Channel.empty()
+    ch_versions       = Channel.empty()
+    ch_annotation_gff = Channel.empty()
+    ch_proteins       = Channel.empty()
 
-    // FIXED: Wrap the entire execution block inside the condition block.
-    // If no RNA-seq is provided, BRAKER3 is completely ignored by the graph builder.
-    if ( params.rnaseq_bam ) {
-        
-        BRAKER3 (
-            ch_masked_assembly,
-            ch_protein_hints,
-            ch_rnaseq_bam
-        )
-        ch_braker_gff = BRAKER3.out.gff3
-        ch_versions   = ch_versions.mix(BRAKER3.out.versions)
-
-    } else {
-        // Safe Fallback: If BRAKER3 is bypassed, populate a clean mock structure [meta, []]
-        // so that the downstream .join() with Funannotate still aligns perfectly.
-        ch_braker_gff = ch_masked_assembly.map { meta, fasta -> [ meta, [] ] }
+    if ( !params.longreads || params.shortreads ) {
+        log.info "INFO: Funannotate — short/hybrid read mode"
+        FUNANNOTATE( ch_masked_assembly, ch_protein_hints, ch_rnaseq_bam )
+        ch_annotation_gff = FUNANNOTATE.out.gff3
+        ch_proteins       = FUNANNOTATE.out.proteins
+        ch_versions       = ch_versions.mix( FUNANNOTATE.out.versions )
+    } else if ( params.longreads && !params.shortreads ) {
+        log.info "INFO: BRAKER3 — long read only mode"
+        BRAKER3( ch_masked_assembly, ch_protein_hints )
+        ch_annotation_gff = BRAKER3.out.gff
+        ch_proteins       = BRAKER3.out.proteins
+        ch_versions       = ch_versions.mix( BRAKER3.out.versions )
     }
 
-    // 2. Unify, Clean, and Finalize Gene Names (FUNANNOTATE)
-    // The .join() operator cleanly pairs up the assembly and the gff structure on the 'meta' key
-    ch_funannotate_input = ch_masked_assembly.join(ch_braker_gff)
-
-    FUNANNOTATE ( ch_funannotate_input )
-    
-    ch_final_gff3     = FUNANNOTATE.out.gff3
-    ch_final_proteins = FUNANNOTATE.out.proteins
-    ch_versions       = ch_versions.mix(FUNANNOTATE.out.versions)
-
     emit:
-    gff3     = ch_final_gff3     // channel: [ val(meta), path(*.gff3) ]
-    proteins = ch_final_proteins // channel: [ val(meta), path(*.proteins.fa) ]
-    versions = ch_versions       // channel: [ path(versions.yml) ]
+    gff      = ch_annotation_gff
+    proteins = ch_proteins
+    versions = ch_versions
+
 }

@@ -44,6 +44,13 @@ outputs/
 data/
 work/
 .nextflow*
+venv3/
+.env
+nextflow/output/
+nextflow/test-fungalflow/
+__pycache__/
+*.pyc
+.DS_Store
 
 # Ignore common bioinformatics file formats
 *.bam

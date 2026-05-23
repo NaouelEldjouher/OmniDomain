@@ -1,10 +1,10 @@
-// subworkflows/local/phytoflow/annotation_functional.nf
+// subworkflows/local/fungalflow/annotation_functional.nf
 
 /*
  * Include custom functional annotation local wrappers
  */
-include { EGGNOG } from '../../../modules/local/eggnog/main'
-include { DBCAN  } from '../../../modules/local/dbcan/main'
+include { EGGNOG } from '../../../modules/local/shared/eggnog/main'
+include { DBCAN  } from '../../../modules/local/fungalflow/dbcan/main'
 
 workflow ANNOTATION_FUNCTIONAL {
     take:

@@ -2,8 +2,8 @@
 // subworkflows/local/shared/repeat_masking.nf
 // ============================================================================
 
-include { REPEATMODELER } from '../../../modules/local/repeatmodeler/main'
-include { REPEATMASKER  } from '../../../modules/local/repeatmasker/main'
+include { REPEATMODELER } from '../../../modules/local/shared/repeatmodeler/main'
+include { REPEATMASKER  } from '../../../modules/local/shared/repeatmasker/main'
 
 workflow REPEAT_MASKING {
     take:
@@ -14,6 +14,8 @@ workflow REPEAT_MASKING {
 
     // ── 1. REPEATMODELER ────────────────────────────────────────────────────
     // De novo repeat family discovery — builds organism-specific repeat library
+    // Required before RepeatMasker for accurate soft-masking
+    // Runtime: 2-8 hours depending on genome size
     REPEATMODELER( ch_assembly )
     ch_versions = ch_versions.mix( REPEATMODELER.out.versions )
 
@@ -22,6 +24,9 @@ workflow REPEAT_MASKING {
     ch_repeatmasker_input = ch_assembly.join( REPEATMODELER.out.repeat_library )
 
     // ── 3. REPEATMASKER ─────────────────────────────────────────────────────
+    // Soft-masks identified repeats using RepeatModeler library + DFam
+    // -xsmall flag: lowercase soft-masking (preserves sequence, hides from predictors)
+    // Nuclear plants: expect 40-85% masked; organelles: expect <5% masked
     REPEATMASKER( ch_repeatmasker_input )
     ch_versions = ch_versions.mix( REPEATMASKER.out.versions )
 

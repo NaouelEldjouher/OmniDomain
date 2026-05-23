@@ -1,6 +1,6 @@
 process UNICYCLER {
     tag "$meta.id"
-    publishDir "${params.outdir}/unicycler", mode: 'copy'
+    publishDir "${params.base_outdir}/nextamr/${params.sample_id ?: "unknown"}/assembly/unicycler", mode: 'copy'
 
     input:
     tuple val(meta), path(shortreads), path(longreads)

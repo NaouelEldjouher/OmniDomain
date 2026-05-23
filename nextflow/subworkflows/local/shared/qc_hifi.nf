@@ -11,11 +11,15 @@ workflow QC_HIFI {
     ch_versions = Channel.empty()
 
     // ── HiFiAdapterFilt ──────────────────────────────────────────────────────
+    // Removes PacBio SMRTbell adapter contamination using BLAST-based detection
+    // This is the ONLY QC filter needed for HiFi reads
  
     HIFIADAPTERFILT( ch_reads )
     ch_versions = ch_versions.mix( HIFIADAPTERFILT.out.versions )
 
     // ── seqkit stats ─────────────────────────────────────────────────────────
+    // Generates read statistics: N50, total bases, read count, length distribution
+    // Feeds into MultiQC report
     SEQKIT_STATS( HIFIADAPTERFILT.out.reads )
     ch_versions = ch_versions.mix( SEQKIT_STATS.out.versions )
 

@@ -18,7 +18,7 @@ process QUAST {
     tuple val(meta), path("${prefix}_transcriptome.tsv") , optional: true , emit: transcriptome
     tuple val(meta), path("${prefix}_misassemblies.tsv") , optional: true , emit: misassemblies
     tuple val(meta), path("${prefix}_unaligned.tsv")     , optional: true , emit: unaligned
-    tuple val("${task.process}"), val('quast'), eval('quast.py --version 2>&1 | grep "QUAST" | sed \'s/^.*QUAST v//; s/ .*\\$//\''), emit: versions_quast, topic: versions
+    path "versions.yml"                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -87,6 +87,8 @@ process QUAST {
     touch $prefix/icarus_viewers/contig_size_viewer.html
 
     ln -s $prefix/report.tsv ${prefix}.tsv
+    echo "\"${task.process}\":" > versions.yml
+    echo "    quast: stub" >> versions.yml
 
     if [ $fasta ]; then
         touch $prefix/basic_stats/NGx_plot.pdf

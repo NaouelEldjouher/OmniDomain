@@ -13,7 +13,7 @@ process FILTLONG {
     output:
     tuple val(meta), path("*.fastq.gz"), emit: reads
     tuple val(meta), path("*.log")     , emit: log
-    tuple val("${task.process}"), val('filtlong'), eval('filtlong --version | sed -e "s/Filtlong v//g"'), topic: versions, emit: versions_filtlong
+    path "versions.yml"                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -35,7 +35,9 @@ process FILTLONG {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    echo "" | gzip > ${prefix}.fastq.gz
+    printf "@stub\nACGT\n+\nIIII\n" | gzip > ${prefix}.filtered.fastq.gz
     touch ${prefix}.log
+    echo "\"${task.process}\":" > versions.yml
+    echo "    filtlong: stub" >> versions.yml
     """
 }

@@ -1,6 +1,8 @@
 // subworkflows/local/shared/qc_hybrid.nf
 
-
+/*
+ * Import your existing local shared subworkflows natively!
+ */
 include { QC_SHORTREAD } from './qc_shortread'
 include { QC_LONGREAD  } from './qc_longread'
 
@@ -18,6 +20,7 @@ workflow QC_HYBRID {
     // 2. Send long reads to your standard Filtlong + NanoPlot subworkflow
     QC_LONGREAD ( ch_raw_longreads )
 
+    // 3. Mix the version history files from both subworkflow tracks
     ch_versions = ch_versions.mix(QC_SHORTREAD.out.versions)
     ch_versions = ch_versions.mix(QC_LONGREAD.out.versions)
 
