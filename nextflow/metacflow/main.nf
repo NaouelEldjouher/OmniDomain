@@ -29,6 +29,7 @@ include { ASSEMBLY_LONG       } from '../subworkflows/local/metacflow/assembly_l
 include { ASSEMBLY_HYBRID     } from '../subworkflows/local/metacflow/assembly_hybrid'
 include { BINNING_METAGENOMIC } from '../subworkflows/local/metacflow/binning_metagenomic'
 include { ANNOTATION_AMR      } from '../subworkflows/local/metacflow/annotation_amr'
+include { TAXONOMY             } from '../subworkflows/local/metacflow/taxonomy'
 
 workflow {
 
@@ -80,6 +81,16 @@ workflow {
     } else {
         QC_LONGREAD( ch_longreads )
         ch_qc_long = QC_LONGREAD.out.reads
+    }
+
+    // ── E2. TAXONOMY — read-level classification ─────────────────────────────
+    // Kraken2 classifies reads against a reference database
+    // Bracken re-estimates abundances at species level
+    if ( params.kraken2_db ) {
+        def ch_tax_reads = has_short ? ch_qc_short : ch_qc_long
+        TAXONOMY( ch_tax_reads, params.kraken2_db )
+    } else {
+        log.info "INFO: Taxonomy skipped — set --kraken2_db to enable"
     }
 
     // ── F. ASSEMBLY ──────────────────────────────────────────────────────────
