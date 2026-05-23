@@ -6,7 +6,6 @@ work/
 # === Pipeline Output Directories ===
 outputs/
 results/
-
 # === Heavy Biological Test Data ===
 test_data/
 *.fastq
@@ -19,13 +18,11 @@ test_data/
 *.bam
 *.bai
 *.sam
-
 # === Terraform Infrastructure ===
 .terraform/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
-
 # === System & Editor Files ===
 .DS_Store
 Thumbs.db
@@ -33,16 +30,9 @@ Thumbs.db
 .idea/
 *.swp
 *:Zone.Identifier
-test_data/
-
-
-
 # Ignore result and data directories
 results_*/
-results/
-outputs/
 data/
-work/
 .nextflow*
 venv3/
 .env
@@ -50,29 +40,16 @@ nextflow/output/
 nextflow/test-fungalflow/
 __pycache__/
 *.pyc
-.DS_Store
-
 # Ignore common bioinformatics file formats
-*.bam
-*.bai
-*.fastq
-*.fastq.gz
-*.fq
-*.fq.gz
 *.vcf
 *.gz
-*.fasta
 *.faivenv3/
 venv/
-work/
-.nextflow.log*
-venv3/
-__pycache__/
-*.pyc
 *.pyo
-.env
-nextflow/output/
 nextflow/work/
-results/
 results_ci/
 results_test/
+*.fai.env
+.pytest_cache/
+ui/omnidomain.db
+.pycharm/
