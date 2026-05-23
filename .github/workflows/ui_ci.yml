@@ -1,0 +1,67 @@
+name: UI CI
+
+on:
+  push:
+    branches: [ main, dev, 'fix/**', 'feature/**', 'test-phytoflow', 'test-fungalflow' ]
+    paths:
+      - 'ui/**'
+      - 'tests/**'
+      - '.github/workflows/ui_ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'ui/**'
+      - 'tests/**'
+
+jobs:
+  test:
+    name: Python tests + DB schema
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER:     omni
+          POSTGRES_PASSWORD: omnipass
+          POSTGRES_DB:       omnidb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest sqlalchemy psycopg2-binary pandas boto3 streamlit
+
+      - name: Create DB tables
+        env:
+          DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
+        run: python ui/core/init_db.py
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
+        run: pytest tests/ -v
+
+      - name: Check nextflow_builder imports
+        run: |
+          cd ui
+          python -c "from core.nextflow_builder import build_command; print('✅ nextflow_builder OK')"
+
+      - name: Check validator imports
+        run: |
+          cd ui
+          python -c "from core.validator import validate_structure; print('✅ validator OK')" 2>/dev/null || \
+          python -c "from core.tsv_validator import validate_structure; print('✅ tsv_validator OK')"
