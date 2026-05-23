@@ -78,13 +78,9 @@ ch_shortreads = has_short
 : Channel.empty()
 
 ch_longreads = has_long
-? Channel.fromPath( params.longreads, checkIfExists: true )
-.map { f ->
-
-def id = f.simpleName
-return [ [id: id], f ]
-}
-: Channel.empty()
+    ? Channel.fromPath( params.longreads, checkIfExists: true )
+        .map { f -> [ [id: f.simpleName], f ] }
+    : Channel.empty()
 
 ch_rnaseq = params.rnaseq_bam
 ? Channel.fromPath( params.rnaseq_bam, checkIfExists: true )
