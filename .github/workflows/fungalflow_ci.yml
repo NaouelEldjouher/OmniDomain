@@ -9,6 +9,7 @@ on:
       - 'nextflow/modules/local/shared/**'
       - 'nextflow/subworkflows/local/fungalflow/**'
       - 'nextflow/subworkflows/local/shared/**'
+      - 'nextflow/modules/nf-core/**'
       - 'nextflow/nextflow.config'
       - '.github/workflows/fungalflow_ci.yml'
   pull_request:
