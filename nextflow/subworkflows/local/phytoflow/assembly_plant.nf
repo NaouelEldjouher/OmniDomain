@@ -2,7 +2,7 @@
 
 include { HIFIASM          } from '../../../modules/nf-core/hifiasm/main'
 include { QUAST            } from '../../../modules/nf-core/quast/main'
-include { MINIMAP2_ALIGN   } from '../../../modules/local//shared/minimap2/main'
+include { MINIMAP2_ALIGN   } from '../../../modules/local/shared/minimap2/main'
 include { SAMTOOLS_COVERAGE } from '../../../modules/local/shared/samtools/main'
 include { BUSCO            } from '../../../modules/local/shared/busco/main'
 

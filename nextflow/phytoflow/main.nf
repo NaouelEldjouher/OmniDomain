@@ -43,7 +43,7 @@ include { ANNOTATION_STRUCTURAL } from '../subworkflows/local/phytoflow/annotati
 include { ANNOTATION_FUNCTIONAL } from '../subworkflows/local/phytoflow/annotation_functional'
 include { SECONDARY_METABOLITES } from '../subworkflows/local/phytoflow/secondary_metabolites'
 include { COMPARATIVE_PLANT     } from '../subworkflows/local/phytoflow/comparative_plant'
-include { EXTRACT_PROTEOME      } from '../modules/local/extract_proteome/main'
+include { EXTRACT_PROTEOME      } from '../modules/local/phytoflow/extract_proteome/main'
 
 /*
  * 3. MAIN WORKFLOW
