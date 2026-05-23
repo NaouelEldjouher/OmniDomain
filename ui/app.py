@@ -22,7 +22,14 @@ st.set_page_config(
 
 # ── Login gate ────────────────────────────────────────────────────────────────
 from tabs.login import render as render_login
-if not render_login():
+import os
+if not os.getenv("DATABASE_URL"):
+    st.warning("⚠️ DATABASE_URL not set — running without user tracking")
+    st.session_state.setdefault("logged_in", True)
+    st.session_state.setdefault("user_id", "local")
+    st.session_state.setdefault("user_name", "Local User")
+    st.session_state.setdefault("user_email", "local@localhost")
+elif not render_login():
     st.stop()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────

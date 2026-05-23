@@ -68,5 +68,10 @@ def _refresh(jobs: list):
             new_status = sm.get(job["job_id"])
             if new_status and new_status != job.get("status"):
                 job["status"] = new_status
+                if job.get("run_id"):
+                    try:
+                        update_status(job["run_id"], new_status)
+                    except Exception:
+                        pass
     except Exception as e:
         st.error(f"Refresh failed: {e}")

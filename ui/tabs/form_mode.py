@@ -213,9 +213,6 @@ def _render_sample_form(pipeline, idx, sample, user_id):
                             ExtraArgs={"ContentType": "application/octet-stream"}
                         )
                         sample["files"][key] = s3_uri
-                        if user_id:
-                            record_upload(user_id, uploaded.name,
-                                         s3_uri, tsv_column=key)
                         st.success(f"✅ Uploaded")
                         st.rerun()
                     except Exception as e:

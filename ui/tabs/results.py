@@ -66,7 +66,7 @@ def render():
 
 def _list_results(pipeline: str, sample_id: str) -> list:
     s3        = boto3.client("s3")
-    prefix    = f"results/{pipeline}/{sample_id}/"
+    prefix    = f"{pipeline}/{sample_id}/"
     paginator = s3.get_paginator("list_objects_v2")
     files     = []
     for page in paginator.paginate(Bucket=RESULTS_BUCKET, Prefix=prefix):
