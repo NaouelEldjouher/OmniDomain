@@ -255,7 +255,13 @@ def render(pipeline: str):
         return
 
     if st.button("🚀 Launch All", type="primary", use_container_width=True):
-        _launch(pipeline, df_complete, user_id, resume)
+        # Tier A — structural validation
+        errors = validate_structure(df_complete, pipeline)
+        if errors:
+            for e in errors:
+                st.error(f"❌ {e}")
+        else:
+            _launch(pipeline, df_complete, user_id, resume)
 
 
 def _scan_s3(pipeline: str, sample_ids: list, convention: list) -> dict:
