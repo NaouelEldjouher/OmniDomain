@@ -1,167 +1,85 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-/*
-* ============================================================================
-* OmniDomain — FungalFlow Pipeline
-* Fungal genome assembly, annotation & secondary metabolite detection
-* Author: Naouel El Djouher
-* ============================================================================
-*
-* Three execution modes — selected automatically from input reads provided:
-*
-*   Mode 1 — Short reads only (Illumina)
-*     nextflow run fungalflow/main.nf --shortreads 'reads_{1,2}.fastq.gz'
-*     Runs: FastP QC → SPAdes → QUAST/BUSCO → RepeatMasking → Funannotate
-*
-*   Mode 2 — Long reads only (ONT)
-*     nextflow run fungalflow/main.nf --longreads 'reads.fastq.gz'
-*     Runs: Filtlong + NanoPlot QC → Flye → QUAST/BUSCO → RepeatMasking → BRAKER3
-*
-*   Mode 3 — Hybrid (Illumina + ONT)
-*     nextflow run fungalflow/main.nf --shortreads 'reads_{1,2}.fastq.gz' \
-*                                     --longreads 'reads.fastq.gz'
-*     Runs: Both QC → SPAdes hybrid → QUAST/BUSCO → RepeatMasking → Funannotate
-* ============================================================================
-*/
-
-/*
- * 1. IMPORT SHARED CORE SUBWORKFLOWS (Hopping up to local/shared)
- */
-include { QC_SHORTREAD   } from '../subworkflows/local/shared/qc_shortread'
-include { QC_LONGREAD    } from '../subworkflows/local/shared/qc_longread'
-include { REPEAT_MASKING } from '../subworkflows/local/shared/repeat_masking'
+include { QC_SHORTREAD          } from '../subworkflows/local/shared/qc_shortread'
+include { QC_LONGREAD           } from '../subworkflows/local/shared/qc_longread'
+include { REPEAT_MASKING        } from '../subworkflows/local/shared/repeat_masking'
 include { ASSEMBLY_FUNGAL       } from '../subworkflows/local/fungalflow/assembly_fungal'
 include { ANNOTATION_STRUCTURAL } from '../subworkflows/local/fungalflow/annotation_structural'
 include { ANNOTATION_FUNCTIONAL } from '../subworkflows/local/fungalflow/annotation_functional'
 include { SECRETOME             } from '../subworkflows/local/fungalflow/secretome'
 include { SECONDARY_METABOLITES } from '../subworkflows/local/fungalflow/secondary_metabolites'
-include { COMPARATIVE_FUNGAL } from '../subworkflows/local/fungalflow/comparative_fungal'
-/*
- * 3. MAIN WORKFLOW EXECUTION
- */
+include { COMPARATIVE_FUNGAL    } from '../subworkflows/local/fungalflow/comparative_fungal'
+
 workflow {
 
+    def has_short  = params.shortreads ? true : false
+    def has_long   = params.longreads  ? true : false
+    def has_hybrid = has_short && has_long
 
+    if      ( has_hybrid ) { log.info ">>> MODE: Hybrid" }
+    else if ( has_short  ) { log.info ">>> MODE: Short reads" }
+    else if ( has_long   ) { log.info ">>> MODE: Long reads" }
+    else                   { error "ERROR: provide --shortreads and/or --longreads" }
 
-// ── A. AUTO-DETECTION ────────────────────────────────────────────────────
-def has_short  = params.shortreads ? true : false
-def has_long   = params.longreads  ? true : false
-def has_hybrid = ( has_short && has_long )
+    def sample_id = params.sample_id ?: 'sample'
+    log.info ">>> sample_id : ${sample_id}"
 
-if      ( has_hybrid ) log.info ">>> MODE: Hybrid — Illumina + ONT → SPAdes hybrid"
-else if ( has_short  ) log.info ">>> MODE: Short reads only — Illumina → SPAdes"
-else if ( has_long   ) log.info ">>> MODE: Long reads only — ONT → Flye"
-else error "PIPELINE ERROR: FungalFlow requires --shortreads and/or --longreads"
+    def ch_shortreads = has_short
+        ? Channel.fromFilePairs( params.shortreads, checkIfExists: true )
+            .map { id, reads -> [ [id: id], reads ] }
+        : Channel.empty()
 
-// ── B. OUTPUT DIRECTORY ──────────────────────────────────────────────────
-// sample_id comes from params (set by UI from TSV)
-// Fallback: extract from filename if not set
-def sample_id = params.sample_id
-?: ( has_short
-? ( params.shortreads =~ /([^\/]+?)(?:_\{R1,R2\}|_R1|_1\.fastq)/ )[0][1]
-: file(params.longreads).simpleName )
+    def ch_longreads = has_long
+        ? Channel.fromPath( params.longreads, checkIfExists: true )
+            .map { f -> [ [id: f.simpleName], f ] }
+        : Channel.empty()
 
-log.info ">>> sample_id : ${sample_id}"
-log.info ">>> outdir    : ${params.base_outdir}/fungalflow/${sample_id}"
-log.info ">>> shortreads: ${params.shortreads ?: 'not provided'}"
-log.info ">>> longreads : ${params.longreads  ?: 'not provided'}"
-log.info ">>> rnaseq_bam: ${params.rnaseq_bam ?: 'not provided'}"
+    def ch_rnaseq = params.rnaseq_bam
+        ? Channel.fromPath( params.rnaseq_bam, checkIfExists: true )
+            .map { f -> [ [id: 'rna_evidence'], f ] }
+        : Channel.of( [ [id: 'rna_empty'], [] ] )
 
+    def ch_protein_hints = params.protein_hints
+        ? Channel.fromPath( params.protein_hints, checkIfExists: true )
+            .map { f -> [ [id: 'prot_hints'], f ] }
+        : Channel.of( [ [id: 'prot_empty'], [] ] )
 
+    QC_SHORTREAD( ch_shortreads )
+    QC_LONGREAD( ch_longreads )
 
-// ── C. INPUT PARSING ─────────────────────────────────────────────────────
-// Short reads — Illumina paired-end
-ch_shortreads = has_short
-? Channel.fromFilePairs( params.shortreads, checkIfExists: true )
-.map { id, reads -> [ [id: id], reads ] }
-: Channel.empty()
+    def ch_qc_short = has_short ? QC_SHORTREAD.out.reads : Channel.empty()
+    def ch_qc_long  = has_long  ? QC_LONGREAD.out.reads  : Channel.empty()
 
-ch_longreads = has_long
-    ? Channel.fromPath( params.longreads, checkIfExists: true )
-        .map { f -> [ [id: f.simpleName], f ] }
-    : Channel.empty()
+    ASSEMBLY_FUNGAL( ch_qc_short, ch_qc_long, has_short, has_long )
 
-ch_rnaseq = params.rnaseq_bam
-? Channel.fromPath( params.rnaseq_bam, checkIfExists: true )
-.map { f -> [ [id: 'rna_evidence'], f ] }
-: Channel.of( [ [id: 'rna_empty'], [] ] )
+    REPEAT_MASKING( ASSEMBLY_FUNGAL.out.assembly )
 
-ch_protein_hints = params.protein_hints
-? Channel.fromPath( params.protein_hints, checkIfExists: true )
-.map { f -> [ [id: 'prot_hints'], f ] }
-: Channel.of( [ [id: 'prot_empty'], [] ] )
+    ANNOTATION_STRUCTURAL(
+        REPEAT_MASKING.out.masked_fasta,
+        ch_protein_hints,
+        ch_rnaseq
+    )
 
+    SECONDARY_METABOLITES(
+        REPEAT_MASKING.out.masked_fasta,
+        ANNOTATION_STRUCTURAL.out.gff
+    )
 
-// ── D. QC ────────────────────────────────────────────────────────────────
-QC_SHORTREAD( ch_shortreads )
-QC_LONGREAD( ch_longreads )
-ch_qc_short = has_short ? QC_SHORTREAD.out.reads : Channel.empty()
-ch_qc_long  = has_long  ? QC_LONGREAD.out.reads  : Channel.empty()
-// ── E. ASSEMBLY ──────────────────────────────────────────────────────────
-// Mode 1 — short only: SPAdes
-// Mode 2 — long only:  Flye
-// Mode 3 — hybrid:     SPAdes hybrid (Illumina accuracy + ONT contiguity)
-// ASSEMBLY_FUNGAL subworkflow handles routing internally
+    ANNOTATION_FUNCTIONAL( ANNOTATION_STRUCTURAL.out.proteins )
 
-ASSEMBLY_FUNGAL(
-ch_qc_short,
-ch_qc_long,
-has_short,
-has_long
-)
+    SECRETOME( ANNOTATION_STRUCTURAL.out.proteins )
 
-// ── F. REPEAT MASKING ────────────────────────────────────────────────────
-// RepeatModeler: de novo repeat family discovery
-// RepeatMasker: soft-mask repeats — required before gene prediction
-// Expected masking: fungal genomes 5–20%
-REPEAT_MASKING( ASSEMBLY_FUNGAL.out.assembly )
+    if ( params.run_comparative ) {
+        def ch_proteomes = ANNOTATION_STRUCTURAL.out.proteins
+            .map { meta, fasta -> fasta }
+            .collect()
+        def ch_gffs = ANNOTATION_STRUCTURAL.out.gff
+            .map { meta, gff -> gff }
+            .collect()
+        COMPARATIVE_FUNGAL( ch_proteomes, ch_gffs )
+    } else {
+        log.info "INFO: Comparative genomics skipped"
+    }
 
-// ── G. STRUCTURAL ANNOTATION ─────────────────────────────────────────────
-// Short/hybrid mode: Funannotate (all-in-one fungal annotation)
-// Long-read mode:    BRAKER3 (evidence-based, works without RNA-seq)
-// Both accept protein hints and RNA-seq evidence when provided
-ANNOTATION_STRUCTURAL(
-REPEAT_MASKING.out.masked_fasta,
-ch_protein_hints,
-ch_rnaseq
-)
-
-// ── H. SECONDARY METABOLITES ─────────────────────────────────────────────
-// antiSMASH: BGC detection — terpenes, PKS, NRPS, RiPPs
-// Requires annotation GFF for full cluster context
-SECONDARY_METABOLITES(
-REPEAT_MASKING.out.masked_fasta,
-ANNOTATION_STRUCTURAL.out.gff
-)
-
-// ── I. FUNCTIONAL ANNOTATION ─────────────────────────────────────────────
-// eggNOG-mapper: GO terms, KEGG pathways, COG categories
-// dbCAN: CAZyme annotation (GH, GT, PL, CE, AA families)
-ANNOTATION_FUNCTIONAL( ANNOTATION_STRUCTURAL.out.proteins )
-
-// ── J. SECRETOME PREDICTION ──────────────────────────────────────────────
-// SignalP: signal peptide prediction → secreted proteins
-// Relevant for industrial enzyme discovery
-SECRETOME( ANNOTATION_STRUCTURAL.out.proteins )
-// ── K. COMPARATIVE GENOMICS ──────────────────────────────────
-// OrthoFinder: gene family clustering across multiple fungal genomes
-// CAFE5: gene family expansion/contraction analysis
-// IQ-TREE2: maximum likelihood species tree
-// Activate with: --run_comparative true
-// Requires: multiple samples — single sample produces no orthogroups
-if ( params.run_comparative ) {
-ch_collected_proteomes = ANNOTATION_STRUCTURAL.out.proteins
-.map { meta, fasta -> fasta }
-.collect()
-
-ch_collected_gffs = ANNOTATION_STRUCTURAL.out.gff
-.map { meta, gff -> gff }
-.collect()
-
-COMPARATIVE_FUNGAL( ch_collected_proteomes, ch_collected_gffs )
-} else {
-log.info "INFO: Comparative genomics skipped — use --run_comparative true to enable"
-log.info "INFO: Requires multiple samples submitted together"
-}
 }
