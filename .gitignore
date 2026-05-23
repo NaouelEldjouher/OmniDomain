@@ -55,4 +55,7 @@ work/
 *.vcf
 *.gz
 *.fasta
-*.fai
+*.faivenv3/
+venv/
+work/
+.nextflow.log*
