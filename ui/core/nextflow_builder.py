@@ -62,7 +62,6 @@ def build_command(pipeline: str, row: pd.Series, resume: bool = False) -> str:
     # AWS Batch config
     cmd.extend([
         f"-work-dir 's3://omni-compute/work/{pipeline_key}/{sample_id}'",
-        f"--aws-batch-job-queue '{AWS_QUEUE}'",
     ])
 
     return " \\\n    ".join(cmd)
@@ -87,9 +86,11 @@ def _build_fungalflow_args(row: pd.Series) -> list:
         r1 = row["shortreads_r1"]
         r2 = row.get("shortreads_r2", "")
         if _is_set(r2):
-            args.append(f"--shortreads '{r1},{r2}'")
+            # Pass as space-separated list — Nextflow fromFilePairs handles S3 URIs
+            args.append(f"--shortreads_r1 '{r1}'")
+            args.append(f"--shortreads_r2 '{r2}'")
         else:
-            args.append(f"--shortreads '{r1}'")
+            args.append(f"--shortreads '{r1}'"  )
     if _is_set(row.get("longreads")):
         args.append(f"--longreads '{row['longreads']}'")
     if _is_set(row.get("rnaseq_bam")):
@@ -142,5 +143,5 @@ def _build_db_args(pipeline: str) -> list:
     if pipeline == "PhytoFlow":
         helixer = os.getenv("OMNI_HELIXER_MODEL")
         if helixer:
-            args.append(f"--helixer_model '{helixer}'")
+            args.append(f"--helixer_models_dir '{helixer}'")
     return args
