@@ -74,7 +74,7 @@ workflow ASSEMBLY_PLANT {
     ch_bin_mock  = Channel.value( [ [id:'bin_mock'],  []     ] )
 
     HIFIASM( ch_hifiasm_reads, ch_trio_mock, ch_hifiasm_hic, ch_bin_mock )
-    ch_versions = ch_versions.mix( HIFIASM.out.versions_hifiasm )
+    ch_versions = ch_versions.mix( HIFIASM.out.versions )
 
     // ── 2. PRIMARY CONTIG FILTER ────────────────────────────────────────────
     ch_primary_gfa = HIFIASM.out.primary_contigs.map { meta, files ->
