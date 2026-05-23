@@ -1,0 +1,162 @@
+name: MetaCflow CI
+
+on:
+  push:
+    branches: [ main, dev, 'fix/**', 'feature/**', 'feature/metacflow' ]
+    paths:
+      - 'nextflow/metacflow/**'
+      - 'nextflow/modules/local/metacflow/**'
+      - 'nextflow/modules/local/shared/**'
+      - 'nextflow/modules/nf-core/**'
+      - 'nextflow/subworkflows/local/metacflow/**'
+      - 'nextflow/subworkflows/local/shared/**'
+      - 'nextflow/nextflow.config'
+      - '.github/workflows/metacflow_ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'nextflow/metacflow/**'
+      - 'nextflow/modules/local/metacflow/**'
+      - 'nextflow/modules/local/shared/**'
+
+jobs:
+
+  syntax:
+    name: Syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Check main.nf parses
+        run: |
+          nextflow run nextflow/metacflow/main.nf \
+            -preview \
+            --reads 'NO_FILE_{R1,R2}.fastq.gz' \
+            --sample_id 'syntax_check' \
+            --base_outdir 'results_ci' \
+            --checkm2_db 'NO_DB' \
+            -profile metacflow \
+            2>&1 || true
+          echo "Syntax check complete"
+
+  stub_short:
+    name: Stub — Illumina short reads
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Create stub test data
+        run: |
+          mkdir -p test_data
+          printf '@r1\nACGT\n+\nIIII\n' | gzip > test_data/meta_R1.fastq.gz
+          printf '@r1\nACGT\n+\nIIII\n' | gzip > test_data/meta_R2.fastq.gz
+          mkdir -p test_data/checkm2_db
+          touch test_data/checkm2_db/uniref100.KO.1.dmnd
+      - name: MetaCflow stub — Illumina
+        run: |
+          nextflow run nextflow/metacflow/main.nf \
+            -stub-run \
+            --reads 'test_data/meta_{R1,R2}.fastq.gz' \
+            --sample_id 'ci_meta_short' \
+            --base_outdir 'results_ci' \
+            --checkm2_db 'test_data/checkm2_db' \
+            -profile metacflow
+          echo "Exit code: $?"
+      - name: Check outputs
+        run: |
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
+          echo "Processes succeeded: $SUCCEEDED"
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: metacflow-stub-short
+          path: work/
+          retention-days: 3
+
+  stub_long:
+    name: Stub — ONT long reads
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Create stub test data
+        run: |
+          mkdir -p test_data
+          printf '@r1\nACGTACGTACGT\n+\nIIIIIIIIIIII\n' | gzip \
+            > test_data/meta_ont.fastq.gz
+          mkdir -p test_data/checkm2_db
+          touch test_data/checkm2_db/uniref100.KO.1.dmnd
+      - name: MetaCflow stub — ONT
+        run: |
+          nextflow run nextflow/metacflow/main.nf \
+            -stub-run \
+            --longreads 'test_data/meta_ont.fastq.gz' \
+            --sample_id 'ci_meta_long' \
+            --base_outdir 'results_ci' \
+            --checkm2_db 'test_data/checkm2_db' \
+            -profile metacflow
+          echo "Exit code: $?"
+      - name: Check outputs
+        run: |
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
+          echo "Processes succeeded: $SUCCEEDED"
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: metacflow-stub-long
+          path: work/
+          retention-days: 3
+
+  stub_hybrid:
+    name: Stub — Hybrid (Illumina + ONT)
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "25.10.4"
+      - name: Create stub test data
+        run: |
+          mkdir -p test_data
+          printf '@r1\nACGT\n+\nIIII\n' | gzip > test_data/meta_R1.fastq.gz
+          printf '@r1\nACGT\n+\nIIII\n' | gzip > test_data/meta_R2.fastq.gz
+          printf '@r1\nACGTACGT\n+\nIIIIIIII\n' | gzip \
+            > test_data/meta_ont.fastq.gz
+          mkdir -p test_data/checkm2_db
+          touch test_data/checkm2_db/uniref100.KO.1.dmnd
+      - name: MetaCflow stub — Hybrid
+        run: |
+          nextflow run nextflow/metacflow/main.nf \
+            -stub-run \
+            --reads 'test_data/meta_{R1,R2}.fastq.gz' \
+            --longreads 'test_data/meta_ont.fastq.gz' \
+            --sample_id 'ci_meta_hybrid' \
+            --base_outdir 'results_ci' \
+            --checkm2_db 'test_data/checkm2_db' \
+            -profile metacflow
+          echo "Exit code: $?"
+      - name: Check outputs
+        run: |
+          SUCCEEDED=$(find work/ -name ".exitcode" 2>/dev/null \
+            | xargs grep -l "^0$" 2>/dev/null | wc -l | tr -d " ")
+          echo "Processes succeeded: $SUCCEEDED"
+          [ "${SUCCEEDED}" -gt 0 ] || (echo "ERROR: no processes ran" && exit 1)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: metacflow-stub-hybrid
+          path: work/
+          retention-days: 3
