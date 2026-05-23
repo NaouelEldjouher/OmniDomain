@@ -15,7 +15,7 @@ workflow QC_LONGREAD {
     ch_filtlong_inputs = ch_raw_longreads.map { meta, reads -> [ meta, [], reads ] }
 
     FILTLONG ( ch_filtlong_inputs )
-    ch_versions = ch_versions.mix( FILTLONG.out.versions_filtlong )
+    ch_versions = ch_versions.mix( FILTLONG.out.versions )
 
 // NanoPlot takes [ meta, [reads] ] — wrap reads in list
     ch_nanoplot_input = FILTLONG.out.reads

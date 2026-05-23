@@ -26,7 +26,7 @@ workflow ASSEMBLY_FUNGAL {
         log.info "INFO: Flye assembler selected"
         FLYE( ch_longreads, '--nano-hq' )
         ch_final_assembly = FLYE.out.fasta
-        ch_versions       = ch_versions.mix( FLYE.out.versions_flye )
+        ch_versions       = ch_versions.mix( FLYE.out.versions )
     }
 
     def ch_validated = ch_final_assembly
