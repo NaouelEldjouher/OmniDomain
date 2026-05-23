@@ -14,7 +14,7 @@ from core.s3_client import file_exists, COMPUTE_BUCKET
 
 AWS_BATCH_JOB_DEF = os.getenv("AWS_BATCH_JOB_DEFINITION", "omni-nextflow-job")
 AWS_BATCH_QUEUE   = os.getenv("AWS_BATCH_QUEUE", "omni-batch-queue")
-BASE_OUTDIR       = os.getenv("OMNI_BASE_OUTDIR", "results")
+BASE_OUTDIR       = os.getenv("OMNI_BASE_OUTDIR", "s3://omni-results")
 
 # ── Cost table ────────────────────────────────────────────────────────────────
 COST = {
