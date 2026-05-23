@@ -67,3 +67,12 @@ venv/
 work/
 .nextflow.log*
 venv3/
+__pycache__/
+*.pyc
+*.pyo
+.env
+nextflow/output/
+nextflow/work/
+results/
+results_ci/
+results_test/
