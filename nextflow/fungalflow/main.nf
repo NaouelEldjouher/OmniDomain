@@ -43,7 +43,7 @@ include { COMPARATIVE_FUNGAL } from '../subworkflows/local/fungalflow/comparativ
 workflow {
 
 
-main:
+
 // ── A. AUTO-DETECTION ────────────────────────────────────────────────────
 def has_short  = params.shortreads ? true : false
 def has_long   = params.longreads  ? true : false
