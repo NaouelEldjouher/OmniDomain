@@ -131,3 +131,20 @@ echo "    nlr_assets    = '${DB_ROOT}/nlr/NLR_Annotator_v2_assets'"
 echo "    checkm2_db    = '${DB_ROOT}/checkm2'"
 
 print_footer
+
+# ── NLR-Annotator ─────────────────────────────────────────────────────────────
+NLR_DIR="${DB_BASE}/nlr"
+mkdir -p "$NLR_DIR"
+if [ ! -s "$NLR_DIR/NLR-Annotator-v2.1b.jar" ]; then
+    log "Downloading NLR-Annotator v2.1b..."
+    wget -q "https://github.com/steuernb/NLR-Annotator/raw/master/NLR-Annotator-v2.1b.jar" \
+        -O "$NLR_DIR/NLR-Annotator-v2.1b.jar"
+    wget -q "https://github.com/steuernb/NLR-Annotator/raw/master/src/mot.txt" \
+        -O "$NLR_DIR/mot.txt"
+    wget -q "https://github.com/steuernb/NLR-Annotator/raw/master/src/store.txt" \
+        -O "$NLR_DIR/store.txt"
+    log "NLR-Annotator ready at $NLR_DIR"
+    log "Pass to pipeline: --nlr_jar $NLR_DIR/NLR-Annotator-v2.1b.jar"
+else
+    log "NLR-Annotator already present — skipping"
+fi
