@@ -96,5 +96,7 @@ process HIFIASM {
     echo "" | gzip > ${prefix}.ec.fa.gz
     echo "" | gzip > ${prefix}.ovlp.paf.gz
     touch ${prefix}.stderr.log
+    echo "\"${task.process}\":" > versions.yml
+    echo "    hifiasm: stub" >> versions.yml
     """
 }
