@@ -55,4 +55,4 @@ work/
 *.vcf
 *.gz
 *.fasta
-*.fai
+*.faivenv3/
