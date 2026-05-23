@@ -67,6 +67,11 @@ workflow {
     if      ( do_helixer ) log.info ">>> MODE: Nuclear de novo — Helixer enabled"
     else if ( do_maker   ) log.info ">>> MODE: Nuclear + Reference — MAKER enabled"
     else                   log.info ">>> MODE: Organelle — annotation skipped"
+    // ── B. SAMPLE ID ─────────────────────────────────────────────────────────
+    def sample_id = params.sample_id ?: 'sample'
+    log.info ">>> sample_id  : ${sample_id}"
+    log.info ">>> genome_type: ${genome}"
+    log.info ">>> outdir     : ${params.base_outdir}/phytoflow/${sample_id}"
 
     // ── B. PRE-FLIGHT VALIDATION ─────────────────────────────────────────────
     // Validate Helixer model directory when Helixer will run
