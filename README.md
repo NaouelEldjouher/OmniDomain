@@ -1,24 +1,41 @@
 # OmniDomain
- A cloud-native multi-kingdom genomics platform. Assembles, annotates,
+ 
+A cloud-native multi-kingdom genomics platform. Assembles, annotates,
 and compares genomes for bacteria, fungi, and plants from a single unified infrastructure.
-* **Model:** Bring Your Own Cloud (BYOC)
+ 
+**Model:** Experimental BYOC (Bring Your Own Cloud)
 All compute runs in your AWS account. You pay AWS directly.
-OmniDomain provides the pipelines, not the servers.
-**HiFi-first plant genome assembly, annotation & comparative genomics**
- ---
+OmniDomain provides the pipelines, the infrastructure code, and the UI — not the servers.
+ 
+---
  
 ## Pipelines
-* **🍄 FungalFlow:** Fungal Genome Assembly & Functional Annotation
-* **Organisms:** Aspergillus, Trichoderma, Fusarium, Penicillium, Candida
-* **Input:** Illumina / ONT / Hybrid
-* **Genome size:** 20–80 Mb
-### Analysis
-* **Assembly:** SPAdes (Illumina/Hybrid) or Flye (ONT)
-* **Structural annotation:**  Funannotate / Augustus
-* **Functional annotation:** eggNOG-mapper (GO, KEGG, COG)
-* **CAZyme annotation:** dbCAN (GH, GT, PL, CE, AA families)
-* **BGC detection:** antiSMASH 7 (PKS, NRPS, terpenes, RiPPs)
-* **Secretome prediction:** DeepSig (signal peptide detection)
+ 
+| Pipeline | Kingdom | Input | Status |
+|---|---|---|---|
+| 🍄 FungalFlow | Fungi | Illumina / ONT / Hybrid | ✅ v1.0 validated |
+| 🌱 PhytoFlow | Plants | PacBio HiFi | ✅ v1.0 validated |
+| 🦠 NextAMR | Bacteria | Illumina / ONT / Hybrid | ✅ v1.0 validated |
+| 🧫 MetaCflow | Metagenomes | Illumina / ONT | 🔧 Planned |
+ 
+---
+ 
+## FungalFlow
+ 
+Fungal genome assembly, structural annotation, functional annotation,
+secondary metabolite detection, and secretome prediction.
+ 
+**Organisms:** Aspergillus, Trichoderma, Fusarium, Penicillium, Candida
+**Input:** Illumina / ONT / Hybrid · **Genome size:** 20–80 Mb
+ 
+| Tool | Purpose |
+|---|---|
+| SPAdes / Flye | Assembly (Illumina/Hybrid or ONT) |
+| Funannotate / BRAKER3 | Structural annotation |
+| eggNOG-mapper | GO terms, KEGG pathways, COG categories |
+| dbCAN | CAZyme annotation (GH, GT, PL, CE, AA families) |
+| antiSMASH 7 | BGC detection (PKS, NRPS, terpenes, RiPPs) |
+| DeepSig | Secretome prediction (signal peptide detection) |
 
 
 ```bash
@@ -39,29 +56,41 @@ nextflow run nextflow/fungalflow/main.nf \
     --longreads 'data/fumigatus_ont.fastq.gz' \
     --sample_id 'aspergillus_fumigatus_case2' \
     --base_outdir 'results'
+# Hybrid (Illumina + ONT)
+nextflow run nextflow/fungalflow/main.nf \
+    -profile fungal_env \
+    --shortreads 'data/niger_{R1,R2}.fastq.gz' \
+    --longreads 'data/niger_ont.fastq.gz' \
+    --sample_id 'aspergillus_niger_case3' \
+    --base_outdir 'results'
+
 ```
+**Note:** Run from the `nextflow/` directory or the config will not load.
+> The pipeline auto-detects mode from inputs — no manual flags required.
+ 
+### Validated results (v1.0)
+ 
+| Case | Input | Assembly | Proteins | CAZymes | BGCs | Secreted |
+|---|---|---|---|---|---|---|
+| Case 1 — *A. niger* CBS 513.88 | Illumina | 9,958 contigs · 5.2Mb | 1,730 | 283 | 1 | 92 |
+| Case 2 — *A. fumigatus* C6 | ONT | 40 contigs · N50 19.5kb | — | 11 | — | — |
+| Case 3 — Hybrid | Illumina + ONT | 9,888 contigs · 5.2Mb | 1,730 | 243 | 1 | 91 |
+ 
+---
 
-🌱 PhytoFlow — Plant Genome Assembly & Annotation
-PhytoFlow is a Nextflow DSL2 pipeline for assembling and annotating plant genomes from PacBio HiFi reads. It auto-detects the appropriate analysis mode from your inputs — no manual tool selection required.
-
-* **Organisms:** Arabidopsis, wheat, barley, tomato, maize, Brassica
-* **Input:** PacBio HiFi
-* **Genome size:** 100 Mb – 16 Gb
-###Analysis:
-
-* **Assembly:** Hifiasm (HiFi-optimised)
-* **Scaffolding:** YAHS (Hi-C) or RagTag (reference-guided)
-* **Structural annotation:** Helixer (deep learning) or BRAKER3 ETP
-* **NBS-LRR resistance genes:** NLR-Annotator v2
-* **Functional annotation:** eggNOG-mapper
-
-
+## PhytoFlow
+ 
+HiFi-first plant genome assembly, annotation, and comparative genomics.
+Auto-detects the appropriate analysis mode from inputs — no manual tool selection required.
+ 
+**Organisms:** Arabidopsis, wheat, barley, tomato, maize, Brassica
+**Input:** PacBio HiFi · **Genome size:** 100 Mb – 16 Gb
  
 | Mode | Trigger | What runs |
 |---|---|---|
-| **Organelle** | `--genome_type organelle` | Assembly + QC + Repeat masking |
-| **Nuclear de novo** | `--genome_type nuclear` | + Helixer gene prediction + Functional annotation |
-| **Nuclear + reference** | `--genome_type nuclear --reference ref.fna` | + RagTag scaffolding + MAKER annotation |
+| Organelle | `--genome_type organelle` | Assembly + QC + Repeat masking |
+| Nuclear de novo | `--genome_type nuclear` | + Helixer gene prediction + Functional annotation |
+| Nuclear + reference | `--genome_type nuclear --reference ref.fna` | + RagTag scaffolding + BRAKER3 annotation |
  
 ---
  
@@ -104,251 +133,140 @@ nextflow run nextflow/phytoflow/main.nf \
  
 ---
  
+### Validated results (v1.0)
+ 
+| Case | Mode | Assembly | Key finding |
+|---|---|---|---|
+| Case 1 — *Arabidopsis* organelle | Organelle | Chloroplast 155,667 bp · 0 gaps | 100.8% complete · IR coverage 340-382x |
+| Case 2 — *Arabidopsis* nuclear | Nuclear de novo | 38 contigs ≥21kb | 527 proteins predicted by Helixer |
+| Case 3 — *Arabidopsis* nuclear + ref | Nuclear + reference | Chr4 scaffolded | PHYA detected · 770 proteins |
+ 
+> **Note on BUSCO for organelles:** 0% BUSCO is the correct result for
+> chloroplast/mitochondrion assemblies. All 1,614 BUSCO genes are nuclear-encoded.
+ 
+---
+ 
+## UI — Streamlit Web Interface
+ 
+A browser-based submission interface connecting scientists to AWS Batch
+without any command-line experience required.
+ 
+**Two submission modes:**
+ 
+**Form mode** (1–3 samples) — upload files directly in the browser,
+fill a form, click Launch. Files transfer via the Streamlit server to S3
+(max 200MB per file).
+ 
+**Batch mode** (4+ samples) — upload all files with one AWS CLI command,
+upload a starter TSV with sample names, the app auto-matches files to
+samples by naming convention, then submits all jobs at once.
+ 
+```bash
+# Install and run
+pip install -r ui/requirements.txt
+streamlit run ui/app.py
+# Open http://localhost:8501
+```
+ 
+**Features:**
+- Email-based login with PostgreSQL run history (SQLite for local dev)
+- Cost estimates before submission
+- Live AWS Batch status monitoring
+- Presigned S3 download links for results
+---
+ 
+## AWS Deployment (Experimental BYOC)
+ 
+All infrastructure is managed with Terraform. Runs on AWS Batch with
+Spot instances — 60–80% cheaper than On-Demand. Nextflow `-resume`
+handles Spot interruptions automatically.
+ 
+```bash
+# Deploy infrastructure
+cd terraform && terraform apply
+ 
+# Generate .env
+terraform output -raw env_template > ../.env
+ 
+# Build and push Docker image to ECR
+bash bin/setup_aws_batch.sh
+ 
+# Populate tool databases on EFS
+bash bin/setup_fungalflow.sh --db-root /mnt/databases
+bash bin/setup_phytoflow.sh  --db-root /mnt/databases
+ 
+# Run UI
+streamlit run ui/app.py
+```
+ 
+**Idle cost:** ~$5/month · **Per run:** $2–8 (FungalFlow) · $10–30 (PhytoFlow)
+ 
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the full step-by-step guide.
+ 
+---
+ 
 ## Requirements
  
-- [Nextflow](https://nextflow.io) >= 23.04.0
-- [Docker](https://docker.com) or [Singularity](https://sylabs.io)
-- 20GB RAM minimum (64GB recommended for large plant genomes)
+- Nextflow ≥ 23.04.0 (tested on 25.10.4)
+- Docker or Singularity
+- 20GB RAM minimum · 64GB recommended for large plant genomes
 - 8 CPUs minimum
 ---
  
-## Pipeline Steps
+## Execution Profiles
  
-### Phase 1 — QC
-| Tool | Purpose |
-|---|---|
-| HiFiAdapterFilt | Removes PacBio SMRTbell adapter contamination |
-| seqkit stats | Read N50, total bases, read count |
- 
-> **Note:** Filtlong is NOT used — it misinterprets HiFi CCS quality scores.
- 
-### Phase 2 — Assembly
-| Tool | Purpose |
-|---|---|
-| Hifiasm | HiFi genome assembler — supports Hi-C phasing |
-| GFA→FASTA | Converts assembly graph to sequence format |
- 
-### Phase 3 — Assembly QC
-| Tool | Purpose |
-|---|---|
-| QUAST | Assembly statistics (N50, L50, contig count, gaps) |
-| BUSCO | Gene space completeness (embryophyta_odb10) |
-| minimap2 + samtools | Read coverage validation per contig |
- 
-> **Note on BUSCO for organelles:** 0% BUSCO is the correct result for chloroplast/mitochondrion assemblies. All 1,614 BUSCO genes are nuclear-encoded.
- 
-### Phase 4 — Scaffolding *(nuclear mode only)*
-| Tool | Trigger | Purpose |
+| Profile | Pipeline | Usage |
 |---|---|---|
-| YAHS | `--hic_map` provided | Hi-C contact map → chromosome-level scaffolding |
-| RagTag | `--reference` provided | Reference-guided scaffolding |
- 
-> **Note:** Never provide a nuclear reference for organelle assemblies — organelle contigs cannot scaffold against nuclear chromosomes.
- 
-### Phase 5 — Repeat Masking
-| Tool | Purpose |
-|---|---|
-| RepeatModeler | De novo repeat family discovery |
-| RepeatMasker | Soft-masks repeats (lowercase) before gene prediction |
- 
-Expected masking: organelles <5%, nuclear plants 40–85%.
- 
-### Phase 6 — Structural Annotation *(nuclear mode only)*
-| Tool | Mode | Purpose |
-|---|---|---|
-| Helixer | Nuclear de novo | Deep learning gene prediction (requires sequences ≥21kb) |
-| MAKER | Nuclear + reference | Evidence-based prediction using proteins/transcriptome |
- 
-### Phase 7 — Secondary Metabolites & Defense *(nuclear mode only)*
-| Tool | Purpose |
-|---|---|
-| NLR-Annotator | Disease resistance gene (NBS-LRR) detection |
- 
-### Phase 8 — Functional Annotation *(nuclear mode only)*
-| Tool | Purpose |
-|---|---|
-| AGAT | Proteome extraction from GFF3 |
-| eggNOG-mapper | GO terms, KEGG pathways, COG categories |
- 
-### Phase 9 — Comparative Genomics *(optional, multi-sample)*
-| Tool | Purpose |
-|---|---|
-| OrthoFinder | Gene family clustering across species |
-| MCScanX | Synteny and collinearity detection |
- 
-Activate with `--run_comparative true`.
- 
----
- 
-## Parameters
- 
-### Required
-| Parameter | Description |
-|---|---|
-| `--hifi_reads` | PacBio HiFi reads (.fastq.gz) |
-| `--genome_type` | `organelle` or `nuclear` |
- 
-### Nuclear mode
-| Parameter | Description |
-|---|---|
-| `--helixer_models_dir` | Path to Helixer land_plant models (required for de novo mode) |
-| `--nlr_jar` | Path to NLR-Annotator JAR file |
-| `--nlr_mot` | Path to NLR-Annotator mot.txt |
-| `--nlr_store` | Path to NLR-Annotator store.txt |
-| `--eggnog_db_dir` | Path to pre-downloaded eggNOG database |
- 
-### Optional scaffolding
-| Parameter | Description |
-|---|---|
-| `--reference` | Reference genome for RagTag scaffolding — activates MAKER |
-| `--hic_map` | Hi-C BAM file for YAHS chromosome scaffolding |
-| `--hic_reads` | Hi-C paired reads for Hifiasm phasing |
- 
-### Optional annotation evidence
-| Parameter | Description |
-|---|---|
-| `--transcriptome` | RNA-seq transcriptome for MAKER evidence |
-| `--proteins` | Protein hints for MAKER annotation |
- 
-### Resource limits
-| Parameter | Default | Description |
-|---|---|---|
-| `--max_memory` | `128.GB` | Maximum memory per process |
-| `--max_cpus` | `32` | Maximum CPUs per process |
-| `--max_time` | `240.h` | Maximum wall time per process |
- 
----
- 
-## Profiles
- 
-| Profile | Description |
-|---|---|
-| `eukaryote_env` | PhytoFlow Docker containers |
-| `eukaryote_env,local_dev` | PhytoFlow with reduced resources (20GB RAM, 8 CPUs) |
-| `eukaryote_env,aws` | PhytoFlow on AWS Batch |
-| `singularity` | HPC Singularity execution |
+| `fungal_env` | FungalFlow | `-profile fungal_env` |
+| `eukaryote_env` | PhytoFlow | `-profile eukaryote_env` |
+| `staphb_amr` | NextAMR | `-profile staphb_amr` |
+| `local_dev` | All | `-profile fungal_env,local_dev` (20GB RAM, 8 CPUs) |
+| `aws` | All | `-profile fungal_env,aws` (256GB RAM, 64 CPUs, S3 output) |
  
 ---
  
 ## Database Setup
  
-### Helixer models (required for nuclear de novo)
 ```bash
-mkdir -p /path/to/helixer_models
-docker run --rm \
-    -v /path/to/helixer_models:/models \
-    docker.io/gglyptodon/helixer-docker:helixer_v0.3.3_cuda_11.8.0-cudnn8 \
-    fetch_helixer_models.py --lineage land_plant --output-dir /models
+# FungalFlow databases
+bash bin/setup_fungalflow.sh
+ 
+# PhytoFlow databases (Helixer + NLR-Annotator + eggNOG + BUSCO)
+bash bin/setup_phytoflow.sh
 ```
  
-### eggNOG database (required for functional annotation)
-```bash
-mkdir -p /path/to/eggnog_db
-docker run --rm \
-    -v /path/to/eggnog_db:/data \
-    quay.io/biocontainers/eggnog-mapper:2.1.12--pyhdfd78af_0 \
-    download_eggnog_data.py --data_dir /data -y
-```
+NLR-Annotator assets are downloaded at runtime by the setup script —
+not bundled in the repository.
  
 ---
  
-## Test Data
+## CI / Testing
  
-Validated on Arabidopsis thaliana:
- 
-| Dataset | Source | Used for |
+| Pipeline | CI | Status |
 |---|---|---|
-| Organelle HiFi reads | Zenodo | Organelle mode validation |
-| Nuclear HiFi reads (5k subset) | ENA ERR8666127 | Nuclear mode validation |
-| Chr4 reference | TAIR10 NC_003075.7 | Reference scaffolding test |
-| Protein hints | TAIR10 proteins | MAKER evidence test |
- 
-### Organelle validation results
-```
-Chloroplast:    155,667 bp  (expected 154,478 bp — 100.8% complete)
-Mitochondrion:  282,616 bp
-N50:            146 kb
-Contigs:        7
-Gaps:           0
-Coverage:       chloroplast IR 340-382x, mitochondrion 89x
-```
- 
-### Nuclear validation results (5k reads subset)
-```
-Contigs ≥21kb:  38 (passed Helixer filter)
-Proteins:       527 predicted by Helixer
-Pipeline:       13 processes — all green
-```
- 
----
- 
-## Output Structure
- 
-```
-results/
-├── 01_qc/
-│   ├── hifiadapterfilt/     # Adapter-filtered reads
-│   └── seqkit_stats/        # Read statistics
-├── 02_assembly/
-│   ├── hifiasm/             # Raw GFA assembly
-│   └── fasta/               # Converted FASTA
-├── 03_assembly_qc/
-│   ├── quast/               # Assembly statistics
-│   ├── busco/               # BUSCO completeness
-│   └── coverage/            # Per-contig coverage report
-├── 04_scaffolding/          # nuclear mode only
-│   ├── yahs/                # Hi-C scaffolds
-│   └── ragtag/              # Reference-guided scaffolds
-├── 05_repeat_masking/
-│   ├── repeatmodeler/       # Repeat library
-│   └── repeatmasker/        # Soft-masked assembly
-├── 06_annotation/           # nuclear mode only
-│   ├── helixer/             # GFF3 gene models (de novo)
-│   └── maker/               # GFF3 gene models (reference)
-├── 07_secondary/            # nuclear mode only
-│   └── nlr_annotator/       # NBS-LRR disease resistance genes
-├── 08_functional/           # nuclear mode only
-│   └── eggnog/              # GO terms, KEGG, COG annotations
-└── 09_comparative/          # --run_comparative true only
-    ├── orthofinder/         # Gene family clusters
-    └── mcscanx/             # Synteny blocks
-```
+| FungalFlow | GitHub Actions — 3 stub jobs (Illumina, ONT, Hybrid) | ✅ |
+| PhytoFlow | GitHub Actions — 3 stub jobs (organelle, nuclear, nuclear+ref) | ✅ |
+| UI | GitHub Actions — pytest + PostgreSQL schema | ✅ |
+| Terraform | GitHub Actions — validate + fmt + Dockerfile lint | ✅ |
  
 ---
  
 ## Known Limitations (v1.0)
  
-| Limitation | Planned fix |
+| Limitation | Planned |
 |---|---|
-| RepeatModeler used for nuclear | Replace with EDTA v2.0 (better plant TE detection) |
-| No TF family classification | Add InterProScan v2.0 (iTAK has no public container) |
-| No MultiQC report | Add MultiQC aggregation v2.0 |
-| No params.schema.json validation | Add nf-core schema validation v2.0 |
-| MAKER not yet validated | Requires RNA-seq test data |
- 
----
- 
-## Citation
- 
-
-```
+| RepeatModeler for nuclear (EDTA better for plants) | v2.0 |
+| No MultiQC aggregation report | v2.0 |
+| No nf-core schema validation | v2.0 |
+| MAKER not yet validated (needs RNA-seq test data) | v2.0 |
+| MetaCflow placeholder only | v1.1 |
  
 ---
  
 ## Author
  
 **Naouel El Djouher**
-M.Sc. Agrobiotechnology (JLU Giessen) | M.Sc. Molecular Pathology
-Full-stack Bioinformatician
+M.Sc. Agrobiotechnology (JLU Giessen) · Full-stack Bioinformatician
  
 GitHub: [@NaouelEldjouher](https://github.com/NaouelEldjouher)
  
----
- 
-## Part of OmniDomain
- 
-| Pipeline | Kingdom | Status |
-|---|---|---|
-| metacflow](../metacflow/) |  |
-| [FungalFlow](../fungalflow/) | Fungi | 🔧 In development |
-| [PhytoFlow](../phytoflow/) | Plants | ✅ v1.0 validated |
