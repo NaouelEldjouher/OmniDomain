@@ -2,10 +2,7 @@ process NANOPLOT {
     tag "$meta.id"
     label 'process_low'
 
-    conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/nanoplot:1.46.1--pyhdfd78af_0' :
-        'quay.io/biocontainers/nanoplot:1.46.1--pyhdfd78af_0' }"
+    container 'quay.io/biocontainers/nanoplot:1.42.0--pyhdfd78af_0'
 
     input:
     tuple val(meta), path(ontfile)
@@ -14,43 +11,34 @@ process NANOPLOT {
     tuple val(meta), path("*.html")                , emit: html
     tuple val(meta), path("*.png") , optional: true, emit: png
     tuple val(meta), path("*.txt")                 , emit: txt
-    path  "versions.yml"                           , emit: versions
+    tuple val(meta), path("*.log")                 , emit: log
+    path "versions.yml"                            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def input_file = ("$ontfile".endsWith(".fastq.gz") || "$ontfile".endsWith(".fq.gz")) ? "--fastq ${ontfile}" :
-        ("$ontfile".endsWith(".txt")) ? "--summary ${ontfile}" : ''
+    def args  = task.ext.args ?: ''
+    def input = ontfile.collect { "--fastq $it" }.join(' ')
     """
     NanoPlot \\
         $args \\
         -t $task.cpus \\
-        $input_file
-
+        $input
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        nanoplot: \$(echo \$(NanoPlot --version 2>&1) | sed 's/^.*NanoPlot //; s/ .*\$//')
+        nanoplot: \$(NanoPlot --version 2>&1 | sed -e "s/NanoPlot //g")
     END_VERSIONS
     """
 
     stub:
     """
-    touch LengthvsQualityScatterPlot_dot.html
-    touch LengthvsQualityScatterPlot_kde.html
     touch NanoPlot-report.html
     touch NanoStats.txt
-    touch Non_weightedHistogramReadlength.html
-    touch Non_weightedLogTransformed_HistogramReadlength.html
-    touch WeightedHistogramReadlength.html
-    touch WeightedLogTransformed_HistogramReadlength.html
-    touch Yield_By_Length.html
-
-
+    touch NanoPlot.log
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        nanoplot: \$(echo \$(NanoPlot --version 2>&1) | sed 's/^.*NanoPlot //; s/ .*\$//')
+        nanoplot: stub_1.42.0
     END_VERSIONS
     """
 }

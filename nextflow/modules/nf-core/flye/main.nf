@@ -18,7 +18,7 @@ process FLYE {
     tuple val(meta), path("*.txt")     , emit: txt
     tuple val(meta), path("*.log")     , emit: log
     tuple val(meta), path("*.json")    , emit: json
-    tuple val("${task.process}"), val('flye'), eval('flye --version'), emit: versions_flye, topic: versions
+    path "versions.yml", emit: versions_flye
 
     when:
     task.ext.when == null || task.ext.when
@@ -54,5 +54,7 @@ process FLYE {
     echo contig_1 > ${prefix}.assembly_info.txt
     echo stub > ${prefix}.flye.log
     echo stub > ${prefix}.params.json
+    echo '"${task.process}":' > versions.yml
+    echo '    flye: stub' >> versions.yml
     """
 }

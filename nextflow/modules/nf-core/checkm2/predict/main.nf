@@ -14,7 +14,7 @@ process CHECKM2_PREDICT {
     output:
     tuple val(meta), path("${prefix}")                   , emit: checkm2_output
     tuple val(meta), path("${prefix}_checkm2_report.tsv"), emit: checkm2_tsv
-    tuple val("${task.process}"), val('checkm2'), eval('checkm2 --version'), topic: versions, emit: versions_checkm2_predict
+    path "versions.yml"                           , emit: versions
     path "versions.yml"                       , emit: versions
 
     when:

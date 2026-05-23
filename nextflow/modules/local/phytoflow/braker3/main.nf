@@ -1,3 +1,4 @@
+// Replaced MAKER with BRAKER3 for dfam independence
 process BRAKER3 {
     tag "$meta.id"
     label 'process_high'
@@ -20,41 +21,33 @@ process BRAKER3 {
     def prefix   = task.ext.prefix ?: "${meta.id}"
     def args     = task.ext.args   ?: ''
     def prot_arg = proteins ? "--prot_seq=proteins_input.faa" : ''
-    """
-    #!/bin/bash
-    set -eo pipefail
+"""
+#!/bin/bash
+set -eo pipefail
 
-    if [ ! -s "${fasta}" ]; then
-        echo "ERROR: Input FASTA is empty"
-        exit 1
-    fi
+# ... Augustus config setup ...
 
-    # Decompress proteins if gzipped
-    if [[ "${proteins}" == *.gz ]]; then
-        gunzip -c ${proteins} > proteins_input.faa
-    else
-        cp ${proteins} proteins_input.faa
-    fi
+if [ -n "${proteins}" ] && [ -s "${proteins}" ]; then
+if [[ "${proteins}" == *.gz ]]; then
+gunzip -c ${proteins} > proteins_input.faa
+else
+cp ${proteins} proteins_input.faa
+fi
+PROT_ARG="--prot_seq=proteins_input.faa"
+else
+echo "INFO: No protein hints — BRAKER3 ab initio mode"
+PROT_ARG=""
+fi
 
-    NSEQS=\$(grep -c "^>" ${fasta} || echo 0)
-    echo "INFO: Running BRAKER3 on \$NSEQS sequences"
-
-    braker.pl \\
-        --genome=${fasta} \\
-        ${prot_arg} \\
-        --softmasking \\
-        --threads=${task.cpus} \\
-        --workingdir=braker \\
-        ${args}
-
-    echo "INFO: BRAKER3 complete"
-    echo "INFO: Genes predicted: \$(grep -c '\\bgene\\b' braker/braker.gtf || echo 0)"
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        braker3: \$(braker.pl --version 2>&1 | grep -oP '[\\d.]+' | head -1 || echo "3.0")
-    END_VERSIONS
-    """
+braker.pl \\
+--genome=${fasta} \\
+\${PROT_ARG} \\          ← escaped — bash evaluates this, not Groovy
+--softmasking \\
+--threads=${task.cpus} \\
+--workingdir=braker \\
+--AUGUSTUS_CONFIG_PATH=\$AUGUSTUS_CONFIG_PATH \\
+${args}
+"""
 
     stub:
     """

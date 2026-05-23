@@ -2,8 +2,8 @@
 // subworkflows/local/shared/repeat_masking.nf
 // ============================================================================
 
-include { REPEATMODELER } from '../../../modules/local/repeatmodeler/main'
-include { REPEATMASKER  } from '../../../modules/local/repeatmasker/main'
+include { REPEATMODELER } from '../../../modules/local/shared/repeatmodeler/main'
+include { REPEATMASKER  } from '../../../modules/local/shared/repeatmasker/main'
 
 workflow REPEAT_MASKING {
     take:
