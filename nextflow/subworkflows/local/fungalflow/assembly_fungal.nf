@@ -8,13 +8,13 @@ include { QUAST  } from '../../../modules/nf-core/quast/main'
 //include { BUSCO  } from '../../../modules/local/shared/busco/main'
 
 workflow ASSEMBLY_FUNGAL {
-take:
+    take:
 ch_shortreads  // [ val(meta), [path(R1), path(R2)] ] or empty
 ch_longreads   // [ val(meta), path(reads.fastq.gz) ] or empty
 has_short      // val Boolean — from main.nf
 has_long       // val Boolean — from main.nf
 
-main:
+    main:
 ch_versions       = Channel.empty()
 ch_final_assembly = Channel.empty()
 
@@ -59,7 +59,7 @@ ch_validated,
 //BUSCO( ch_validated, 'genome', 'fungi_odb10' )
 //ch_versions = ch_versions.mix( BUSCO.out.versions )
 
-emit:
+    emit:
 assembly  = ch_validated
 quast_tsv = QUAST.out.tsv
 busco_txt = Channel.empty()    // placeholder — BUSCO disabled for local test

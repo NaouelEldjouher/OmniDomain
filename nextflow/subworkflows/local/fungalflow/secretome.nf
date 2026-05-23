@@ -17,9 +17,9 @@
 // academic registration at services.healthtech.dtu.dk
 include { DEEPSIG } from '../../../modules/local/fungalflow/deepsig/main'
 workflow SECRETOME {
-take:
+    take:
 ch_proteins // channel: [ val(meta), path(proteins.fasta) ]
-main:
+    main:
 ch_versions = Channel.empty()
 
 // DeepSig — deep learning signal peptide predictor
@@ -29,7 +29,7 @@ ch_versions = Channel.empty()
 DEEPSIG( ch_proteins )
 ch_versions = ch_versions.mix( DEEPSIG.out.versions )
 
-emit:
+    emit:
 secreted_proteins = DEEPSIG.out.secreted  // [ meta, path(*.secreted.faa) ]
 gff3              = DEEPSIG.out.results   // [ meta, path(*.deepsig.gff3) ]
 versions          = ch_versions

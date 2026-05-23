@@ -13,7 +13,7 @@ workflow COMPARATIVE_FUNGAL {
     ch_gffs        // [ path(annotation.gff), ... ] — collected from all samples
 
 
-main:
+    main:
     ch_versions = Channel.empty()
 
    // Step 1 — gene family clustering

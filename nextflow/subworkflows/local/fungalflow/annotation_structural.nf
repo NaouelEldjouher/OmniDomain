@@ -5,12 +5,12 @@ include { FUNANNOTATE } from '../../../modules/local/fungalflow/funannotate/main
 
 
 workflow ANNOTATION_STRUCTURAL {
-take:
+    take:
 ch_masked_assembly  // [ val(meta), path(masked.fa) ]
 ch_protein_hints    // [ val(meta), path(proteins.fa) ] or empty
 ch_rnaseq_bam       // [ val(meta), path(rna.bam) ]    or empty
 
-main:
+    main:
 ch_versions       = Channel.empty()
 ch_annotation_gff = Channel.empty()
 ch_proteins       = Channel.empty()
@@ -35,7 +35,7 @@ ch_versions       = ch_versions.mix( BRAKER3.out.versions )
 }
 
 
-emit:
+    emit:
 gff      = ch_annotation_gff  // [ meta, path(*.gff3 or *.gtf) ]
 proteins = ch_proteins         // [ meta, path(*.proteins.faa) ]
 versions = ch_versions

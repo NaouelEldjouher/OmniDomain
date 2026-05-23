@@ -5,10 +5,10 @@
  */
 include { FASTP } from '../../../modules/local/shared/fastp/main'
 workflow QC_SHORTREAD {
-take:
+    take:
 ch_raw_shortreads
 
-main:
+    main:
 ch_versions = Channel.empty()
 
 // Add single_end: false so FASTP uses paired-end code path
@@ -28,7 +28,7 @@ false
 
 ch_versions = ch_versions.mix( FASTP.out.versions )
 
-emit:
+    emit:
 reads    = FASTP.out.reads
 json     = FASTP.out.json
 html     = FASTP.out.html

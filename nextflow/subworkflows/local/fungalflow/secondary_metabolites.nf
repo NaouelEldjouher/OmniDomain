@@ -3,11 +3,11 @@
 include { ANTISMASH } from '../../../modules/local/fungalflow/antismash/main'
 
 workflow SECONDARY_METABOLITES {
-take:
+    take:
 ch_assembly  // [ val(meta), path(assembly.fasta) ]
 ch_gff       // [ val(meta), path(annotation.gff3) ]
 
-main:
+    main:
 ch_versions = Channel.empty()
 
 // antiSMASH — biosynthetic gene cluster detection
@@ -19,7 +19,7 @@ ch_antismash_input = ch_assembly
 ANTISMASH( ch_antismash_input )
 ch_versions = ch_versions.mix( ANTISMASH.out.versions )
 
-emit:
+    emit:
 bgc_results = ANTISMASH.out.results  // [ meta, path(antismash_output/) ]
 versions    = ch_versions
 }
