@@ -3,7 +3,7 @@
 /*
  * Include the official nf-core fastp module wrapper
  */
-include { FASTP } from '../../../modules/nf-core/fastp/main'
+include { FASTP } from '../../../modules/local/shared/fastp/main'
 workflow QC_SHORTREAD {
 take:
 ch_raw_shortreads
