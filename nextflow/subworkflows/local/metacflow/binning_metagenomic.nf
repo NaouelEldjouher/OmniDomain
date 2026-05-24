@@ -23,12 +23,11 @@ workflow BINNING_METAGENOMIC {
     MINIMAP2_ALIGN ( ch_minimap_inputs )
     
     // FIXED: Keep the complete [meta, bam, bai] tuple intact
-    ch_bam_index = MINIMAP2_ALIGN.out.bam_index
     ch_versions  = ch_versions.mix(MINIMAP2_ALIGN.out.versions)
 
     // 2. Calculate contig depth profiles from the BAM file
     // FIXED: Passing the complete 3-element tuple that matches the input signature
-    SAMTOOLS_DEPTH ( ch_bam_index )
+    SAMTOOLS_DEPTH ( MINIMAP2_ALIGN.out.sam )
     ch_depth    = SAMTOOLS_DEPTH.out.depth 
     ch_versions = ch_versions.mix(SAMTOOLS_DEPTH.out.versions)
 
