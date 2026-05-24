@@ -15,7 +15,6 @@ process CHECKM2_PREDICT {
     tuple val(meta), path("${prefix}")                   , emit: checkm2_output
     tuple val(meta), path("${prefix}_checkm2_report.tsv"), emit: checkm2_tsv
     path "versions.yml"                           , emit: versions
-    path "versions.yml"                       , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
