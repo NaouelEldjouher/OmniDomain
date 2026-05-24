@@ -3,7 +3,6 @@
 # OmniDomain — Metacflow Databases
 # Downloads: Kraken2 standard + Bracken + HUMAnN3 (ChocoPhlAn + UniRef)
 #
-# Status: Metacflow is in development — databases listed here are planned
 #
 # Usage:
 #   bash setup_metacflow.sh
@@ -15,7 +14,7 @@
 
 set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/lib/common.sh"
+source "${SCRIPT_DIR}/common.sh"
 
 usage() {
     echo "Usage: $0 [--only kraken2|bracken|humann3] [--db-root PATH]"
@@ -26,7 +25,6 @@ print_header "OmniDomain — Metacflow Databases"
 check_docker
 check_wget
 
-warn "Metacflow is in development — databases are downloaded but pipeline is not yet built"
 
 # =============================================================================
 # Kraken2 Standard Database
