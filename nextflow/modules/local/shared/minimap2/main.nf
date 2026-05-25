@@ -36,7 +36,9 @@ process MINIMAP2_ALIGN {
     fi
 
     # Validate inputs are not empty
-    if [ ! -s "${reads}" ]; then
+    # Validate first read file exists
+    FIRST_READ=\$(echo "${reads}" | awk '{print $1}')
+    if [ ! -s "$FIRST_READ" ]; then
         echo "ERROR: Input reads file is empty: ${reads}"
         exit 1
     fi
