@@ -18,7 +18,7 @@ workflow BINNING_METAGENOMIC {
     ch_versions = Channel.empty()
 
     // 1. Map raw reads back to the co-assembly to determine coverage abundance
-    ch_minimap_inputs = ch_raw_assembly.join(ch_mapping_reads)
+    ch_minimap_inputs = ch_mapping_reads.join(ch_raw_assembly)
     
     MINIMAP2_ALIGN ( ch_minimap_inputs )
     
