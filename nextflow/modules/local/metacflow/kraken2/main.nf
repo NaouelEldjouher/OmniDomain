@@ -2,7 +2,7 @@ process KRAKEN2 {
     tag "$meta.id"
     label 'process_high'
 
-    container 'quay.io/biocontainers/kraken2:2.1.3--pl5321h9f5acd7_0'
+    container 'staphb/kraken2:latest'
 
     input:
     tuple val(meta), path(reads)
