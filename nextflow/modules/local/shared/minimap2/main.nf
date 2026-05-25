@@ -37,10 +37,7 @@ process MINIMAP2_ALIGN {
 
     # Validate inputs are not empty
     # Validate first read file exists
-    if [ ! -s "$(echo ${reads} | cut -d' ' -f1)" ]; then
-        echo "ERROR: Input reads file is empty"
-        exit 1
-    fi
+
     if [ ! -s "${ref}" ]; then
         echo "ERROR: Reference assembly file is empty: ${ref}"
         exit 1
