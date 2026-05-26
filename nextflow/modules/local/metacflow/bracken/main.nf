@@ -13,6 +13,11 @@ process BRACKEN {
     tuple val(meta), path("${meta.id}.bracken_report.txt"), emit: report
     path "versions.yml",                                    emit: versions
 
+    publishDir [
+        path: { "${params.base_outdir}/metacflow/${params.sample_id}/05_taxonomy/bracken" },
+        mode: "copy"
+    ]
+
     when:
     task.ext.when == null || task.ext.when
 

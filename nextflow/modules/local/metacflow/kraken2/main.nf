@@ -13,6 +13,11 @@ process KRAKEN2 {
     tuple val(meta), path("${meta.id}.kraken2.output.txt"), emit: output
     path "versions.yml",                                    emit: versions
 
+    publishDir [
+        path: { "${params.base_outdir}/metacflow/${params.sample_id}/05_taxonomy/kraken2" },
+        mode: "copy"
+    ]
+
     when:
     task.ext.when == null || task.ext.when
 
