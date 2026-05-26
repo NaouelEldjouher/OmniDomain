@@ -2,7 +2,7 @@
 
 // Keep your working local alignment tools
 include { MINIMAP2_ALIGN } from '../../../modules/local/shared/minimap2/main'
-include { SAMTOOLS_DEPTH } from '../../../modules/local/shared/samtools/main'
+include { JGI_SUMMARIZE_DEPTH } from '../../../modules/local/metacflow/jgi_depth/main'
 
 // Swap your binning engines to your newly added nf-core folders!
 include { METABAT2_METABAT2 as METABAT2 } from '../../../modules/nf-core/metabat2/metabat2/main'
@@ -27,9 +27,9 @@ workflow BINNING_METAGENOMIC {
 
     // 2. Calculate contig depth profiles from the BAM file
     // FIXED: Passing the complete 3-element tuple that matches the input signature
-    SAMTOOLS_DEPTH ( MINIMAP2_ALIGN.out.sam )
-    ch_depth    = SAMTOOLS_DEPTH.out.depth 
-    ch_versions = ch_versions.mix(SAMTOOLS_DEPTH.out.versions)
+    JGI_SUMMARIZE_DEPTH ( MINIMAP2_ALIGN.out.sam )
+    ch_depth    = JGI_SUMMARIZE_DEPTH.out.depth
+    ch_versions = ch_versions.mix( JGI_SUMMARIZE_DEPTH.out.versions )
 
     // ==============================================================================
     // 3. Join fasta and depth into a single multi-file channel block
