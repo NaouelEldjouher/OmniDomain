@@ -43,7 +43,7 @@ process METABAT2_METABAT2 {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        metabat2: \$(metabat2 --help 2>&1 | head -2 | grep -oP "\d+\.\d+" | head -1 || echo "2.17")
+        metabat2: 2.17
     END_VERSIONS
     """
 
