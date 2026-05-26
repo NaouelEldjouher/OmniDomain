@@ -40,6 +40,11 @@ process METABAT2_METABAT2 {
 
     touch ${prefix}.tsv.gz
     find . -maxdepth 1 -name "*.fa" -type f | xargs --no-run-if-empty -n 1 bgzip -@ ${task.cpus}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        metabat2: \$(metabat2 --help 2>&1 | head -2 | grep -oP "\d+\.\d+" | head -1 || echo "2.17")
+    END_VERSIONS
     """
 
     stub:
