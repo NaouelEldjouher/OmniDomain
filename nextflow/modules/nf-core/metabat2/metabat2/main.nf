@@ -39,7 +39,7 @@ process METABAT2_METABAT2 {
         -o ${prefix}
 
     [ -f "${prefix}" ] && [ -f "${prefix}" ] && [ -f "${prefix}" ] && gzip -cn ${prefix} > ${prefix}.tsv.gz || touch ${prefix}.tsv.gz || touch ${prefix}.tsv.gz || touch ${prefix}.tsv.gz
-    find . -maxdepth 1 -name "*.fa" -type f | xargs -t -n 1 bgzip -@ ${task.cpus} || true || true || true
+    find . -maxdepth 1 -name "*.fa" -type f | xargs --no-run-if-empty -n 1 bgzip -@ ${task.cpus}
     """
 
     stub:
