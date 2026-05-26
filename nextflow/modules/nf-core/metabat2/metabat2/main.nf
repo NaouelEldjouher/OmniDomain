@@ -38,8 +38,8 @@ process METABAT2_METABAT2 {
         --saveCls \\
         -o ${prefix}
 
-    [ -f "${prefix}" ] && [ -f "${prefix}" ] && gzip -cn ${prefix} > ${prefix}.tsv.gz || touch ${prefix}.tsv.gz || touch ${prefix}.tsv.gz
-    find . -maxdepth 1 -name "*.fa" -type f | xargs -t -n 1 bgzip -@ ${task.cpus} || true || true
+    [ -f "${prefix}" ] && [ -f "${prefix}" ] && [ -f "${prefix}" ] && gzip -cn ${prefix} > ${prefix}.tsv.gz || touch ${prefix}.tsv.gz || touch ${prefix}.tsv.gz || touch ${prefix}.tsv.gz
+    find . -maxdepth 1 -name "*.fa" -type f | xargs -t -n 1 bgzip -@ ${task.cpus} || true || true || true
     """
 
     stub:
