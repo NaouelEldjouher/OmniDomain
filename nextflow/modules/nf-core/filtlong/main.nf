@@ -30,6 +30,11 @@ process FILTLONG {
         $longreads \\
         2>| >(tee ${prefix}.log >&2) \\
         | gzip -n > ${prefix}.fastq.gz
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        filtlong: \$(filtlong --version 2>&1 | sed 's/Filtlong v//' )
+    END_VERSIONS
     """
 
     stub:
