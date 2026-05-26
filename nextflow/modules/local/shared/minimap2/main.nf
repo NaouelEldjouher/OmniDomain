@@ -18,7 +18,7 @@ process MINIMAP2_ALIGN {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def args   = task.ext.args   ?: '-ax map-hifi'
+    def args   = task.ext.args   ?: '-ax map-ont'
     // Assembly arrives as FASTA after GFA_TO_FASTA conversion
     // Keep GFA fallback for robustness in case it's called with raw GFA
     def ref    = assembly.name.endsWith('.gfa')
