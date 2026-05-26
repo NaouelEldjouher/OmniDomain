@@ -25,7 +25,7 @@ process JGI_SUMMARIZE_DEPTH {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        metabat2: \$(metabat2 --help 2>&1 | head -2 | tail -1 | sed 's/.*(\(.*\)).*/\1/')
+        metabat2: 2.17
     END_VERSIONS
     """
 
