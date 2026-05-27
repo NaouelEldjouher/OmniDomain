@@ -22,15 +22,29 @@ process CHECKM2_PREDICT {
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
     """
-    checkm2 \\
-        predict \\
-        --input ${fasta} \\
-        --output-directory ${prefix} \\
-        --threads ${task.cpus} \\
-        --database_path ${db} \\
-        ${args}
 
-    cp ${prefix}/quality_report.tsv ${prefix}_checkm2_report.tsv
+    # Handle 0-bin case — MetaBAT2 produces empty stubs when coverage is too low
+    REAL_BINS=$(find -L . -maxdepth 1 -name "*.fa.gz" -size +100c 2>/dev/null | wc -l)
+    if [ "$REAL_BINS" -gt 0 ]; then
+        checkm2 \
+            predict \
+            --input ${fasta} \
+            --output-directory ${prefix} \
+            --threads ${task.cpus} \
+            --database_path ${db} \
+            ${args}
+        cp ${prefix}/quality_report.tsv ${prefix}_checkm2_report.tsv
+    else
+        echo "INFO: No real bins found — skipping CheckM2 assessment"
+        mkdir -p ${prefix}
+        printf "Name\tCompleteness\tContamination\tCompleteness_Model_Used\tTranslation_Table_Used\tCoding_Density\tContig_N50\tAverage_Gene_Length\tGenome_Size\tGC_Content\tTotal_Coding_Sequences\tAdditional_Notes\n" \
+            > ${prefix}_checkm2_report.tsv
+    fi
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        checkm2: 1.0.1
+    END_VERSIONS
     """
 
     stub:
