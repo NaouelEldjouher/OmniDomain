@@ -31,7 +31,7 @@ process CHECKM2_PREDICT {
             --input ${fasta} \
             --output-directory ${prefix} \
             --threads ${task.cpus} \
-            --database_path ${db} \
+            --database_path ${db}/uniref100.KO.1.dmnd \
             ${args}
         cp ${prefix}/quality_report.tsv ${prefix}_checkm2_report.tsv
     else
