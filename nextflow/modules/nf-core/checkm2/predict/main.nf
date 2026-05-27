@@ -25,7 +25,7 @@ process CHECKM2_PREDICT {
 
     # Handle 0-bin case — MetaBAT2 produces empty stubs when coverage is too low
     REAL_BINS=\$(find -L . -maxdepth 1 -name "*.fa.gz" -size +100c 2>/dev/null | wc -l)
-    if [ "$REAL_BINS" -gt 0 ]; then
+    if [ "\$REAL_BINS" -gt 0 ]; then
         checkm2 \
             predict \
             --input ${fasta} \
