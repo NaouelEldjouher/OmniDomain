@@ -1,14 +1,16 @@
-# === Nextflow Heavy Execution Data ===
+# === Nextflow ===
 .nextflow/
 .nextflow.log*
 work/
+nextflow/output/
 
-# === Pipeline Output Directories ===
+# === Pipeline outputs ===
 outputs/
 results/
+results_*/
+data/
 
-# === Heavy Biological Test Data ===
-test_data/
+# === Biological file formats ===
 *.fastq
 *.fastq.gz
 *.fq
@@ -19,69 +21,39 @@ test_data/
 *.bam
 *.bai
 *.sam
+*.vcf
+*.gz
+*.fai
 
-# === Terraform Infrastructure ===
+# === Terraform ===
 .terraform/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
 
-# === System & Editor Files ===
+# === Python ===
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv3/
+.pytest_cache/
+
+# === Environment & secrets ===
+.env
+*.env
+*:Zone.Identifier
+
+# === Database ===
+ui/omnidomain.db
+
+# === Editor & system ===
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
-*.swp
-*:Zone.Identifier
-test_data/
-
-
-
-# Ignore result and data directories
-results_*/
-results/
-outputs/
-data/
-work/
-.nextflow*
-
-# Ignore common bioinformatics file formats
-*.bam
-*.bai
-*.fastq
-*.fastq.gz
-*.fq
-*.fq.gz
-*.vcf
-*.gz
-*.fasta
-*.fai.env
-__pycache__/
-.pytest_cache/
-venv3/
-ui/omnidomain.db
-__pycache__/
-.DS_Store
-.idea/
 .pycharm/
-__pycache__/
-*.pyc
-.env
-# Nextflow outputs
-nextflow/output/
-work/
-results/
-outputs/
+*.swp
 
-# Python
-__pycache__/
-*.pyc
-.venv/
-*.egg-info/
-
-# Environment
-.env
-*.env
-
-# Alembic won't need this ignored but just in case
-*.pyc
+# === Test data ===
+test_data/
