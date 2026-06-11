@@ -67,3 +67,21 @@ __pycache__/
 __pycache__/
 *.pyc
 .env
+# Nextflow outputs
+nextflow/output/
+work/
+results/
+outputs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Environment
+.env
+*.env
+
+# Alembic won't need this ignored but just in case
+*.pyc
