@@ -1,4 +1,3 @@
-ain · PY
 # api/main.py
 
 import logging
