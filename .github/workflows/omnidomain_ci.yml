@@ -1,0 +1,119 @@
+name: OmniDomain CI
+
+on:
+  push:
+    branches: [ main, dev, 'fix/**', 'feature/**', 'test-phytoflow', 'test-fungalflow' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  # ── API layer tests ──────────────────────────────────────────────────────────
+  api-tests:
+    name: API — repository + routes
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            pytest \
+            pytest-cov \
+            fastapi \
+            httpx \
+            sqlalchemy \
+            pydantic[email] \
+            pyjwt \
+            boto3 \
+            pandas \
+            psycopg2-binary \
+            alembic
+
+      - name: Run repository and route tests
+        env:
+          DATABASE_URL: sqlite:///:memory:
+          JWT_SECRET: test-secret-not-for-production
+          AWS_BATCH_JOB_DEFINITION: omni-nextflow-job
+          AWS_BATCH_QUEUE: omni-batch-queue
+          AWS_REGION: eu-central-1
+        run: |
+          pytest tests/test_repository.py tests/test_routes.py -v --tb=short
+
+      - name: Check coverage
+        env:
+          DATABASE_URL: sqlite:///:memory:
+          JWT_SECRET: test-secret-not-for-production
+        run: |
+          pytest tests/test_repository.py tests/test_routes.py \
+            --cov=api/db/repository \
+            --cov=api/routes \
+            --cov=api/services \
+            --cov-report=term-missing \
+            --cov-fail-under=70
+
+  # ── UI layer tests ───────────────────────────────────────────────────────────
+  ui-tests:
+    name: UI — Streamlit + legacy DB
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER:     omni
+          POSTGRES_PASSWORD: omnipass
+          POSTGRES_DB:       omnidb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UI dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            pytest \
+            sqlalchemy \
+            psycopg2-binary \
+            pandas \
+            boto3 \
+            streamlit \
+            alembic
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
+        run: alembic upgrade head
+
+      - name: Run UI tests
+        env:
+          DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
+        run: pytest tests/test_db.py -v
+
+      - name: Check nextflow_builder imports
+        run: |
+          cd ui
+          python -c "from core.nextflow_builder import build_command; print('✅ nextflow_builder OK')"
+
+      - name: Check validator imports
+        run: |
+          cd ui
+          python -c "from core.validator import validate_structure; print('✅ validator OK')" 2>/dev/null || \
+          python -c "from core.tsv_validator import validate_structure; print('✅ tsv_validator OK')"
