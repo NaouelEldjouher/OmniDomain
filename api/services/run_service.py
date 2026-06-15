@@ -4,6 +4,7 @@ import logging
 import os
 from typing import Optional
 
+import pandas as pd
 import boto3
 from sqlalchemy.orm import Session
 
@@ -56,19 +57,12 @@ def create_run(
 
 
 def submit_run(db: Session, run: Run, resume: bool = False) -> Run:
-    """
-    Submit an existing run to AWS Batch.
-    Updates run status to SUBMITTED on success.
-    Commits the transaction.
-    Raises RuntimeError if Batch submission fails.
-    """
-    import pandas as pd
-    row = pd.Series(run.tsv_row)
-    cmd = build_command(run.pipeline, row, resume=resume)
-
     job_name = f"omni-{run.pipeline.lower()}-{run.sample_id}"
 
     try:
+        row = pd.Series(run.tsv_row)
+        cmd = build_command(run.pipeline, row, resume=resume)
+
         batch = boto3.client("batch", region_name=AWS_REGION)
         resp = batch.submit_job(
             jobName=job_name,

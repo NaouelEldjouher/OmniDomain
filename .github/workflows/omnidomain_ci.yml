@@ -128,5 +128,4 @@ jobs:
       - name: Check validator imports
         run: |
           cd ui
-          python -c "from core.validator import validate_structure; print('✅ validator OK')" 2>/dev/null || \
-          python -c "from core.tsv_validator import validate_structure; print('✅ tsv_validator OK')"
+          python -c "from core.validator import validate_structure; print('✅ validator OK')"
