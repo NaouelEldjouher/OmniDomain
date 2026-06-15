@@ -15,6 +15,8 @@ on:
       - 'api/**'
       - 'ui/**'
       - 'tests/**'
+env:
+  PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/ui
 
 jobs:
 
@@ -56,7 +58,6 @@ jobs:
 
       - name: Run repository and route tests
         env:
-          PYTHONPATH: ${{ github.workspace }}
           DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
           JWT_SECRET: test-secret-not-for-production
           AWS_BATCH_JOB_DEFINITION: omni-nextflow-job
@@ -67,7 +68,6 @@ jobs:
 
       - name: Check coverage
         env:
-          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/ui
           DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
           JWT_SECRET: test-secret-not-for-production
         run: |
@@ -108,7 +108,7 @@ jobs:
       - name: Install UI dependencies
         run: |
           pip install --upgrade pip
-          pip install pytest sqlalchemy psycopg2-binary pandas boto3 streamlit alembic fastapi httpx "pydantic[email]" pyjwt
+          pip install -r requirements.txt
 
       - name: Run Alembic migrations
         env:
@@ -118,7 +118,7 @@ jobs:
       - name: Run UI tests
         env:
           DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
-          PYTHONPATH: ${{ github.workspace }}
+          JWT_SECRET: test-secret-not-for-production-must-be-32-chars
         run: pytest tests/test_repository.py -v
 
       - name: Check nextflow_builder imports
@@ -127,7 +127,5 @@ jobs:
           python -c "from core.nextflow_builder import build_command; print('✅ nextflow_builder OK')"
 
       - name: Check validator imports
-        env:
-          PYTHONPATH: ${{ github.workspace }}/ui
         run: |
-          python -c "from core.validator import validate_structure; print('✅ validator OK')"
+          python -c "from ui.core.validator import validate_structure; print('✅ validator OK')"
