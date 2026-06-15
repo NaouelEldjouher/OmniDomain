@@ -67,6 +67,7 @@ jobs:
 
       - name: Check coverage
         env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/ui
           DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
           JWT_SECRET: test-secret-not-for-production
         run: |
@@ -126,6 +127,7 @@ jobs:
           python -c "from core.nextflow_builder import build_command; print('✅ nextflow_builder OK')"
 
       - name: Check validator imports
+        env:
+          PYTHONPATH: ${{ github.workspace }}/ui
         run: |
-          cd ui
           python -c "from core.validator import validate_structure; print('✅ validator OK')"
