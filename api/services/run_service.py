@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 
 from api.db.models import Run, RunStatus
 from api.db.repository import RunRepository
-from core.nextflow_builder import build_command
-from core.validator import validate_structure
+from ui.core.nextflow_builder import build_command
+from ui.core.validator import validate_structure
 
 log = logging.getLogger(__name__)
 

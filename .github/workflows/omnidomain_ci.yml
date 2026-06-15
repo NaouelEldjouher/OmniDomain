@@ -119,18 +119,7 @@ jobs:
       - name: Install UI dependencies
         run: |
           pip install --upgrade pip
-          pip install \
-            pytest \
-            sqlalchemy \
-            psycopg2-binary \
-            pandas \
-            boto3 \
-            streamlit \
-            alembic
-            fastapi \
-            httpx \
-           "pydantic[email]" \
-            pyjwt
+          pip install pytest sqlalchemy psycopg2-binary pandas boto3 streamlit alembic fastapi httpx "pydantic[email]" pyjwt
 
       - name: Run Alembic migrations
         env:
