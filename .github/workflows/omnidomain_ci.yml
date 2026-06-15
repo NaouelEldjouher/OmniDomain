@@ -29,7 +29,7 @@ jobs:
             fastapi \
             httpx \
             sqlalchemy \
-            pydantic[email] \
+            "pydantic[email]" \
             pyjwt \
             boto3 \
             pandas \
