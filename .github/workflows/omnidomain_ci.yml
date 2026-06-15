@@ -130,7 +130,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest tests/test_db.py -v
+        run: pytest tests/test_repository.py -v
 
       - name: Check nextflow_builder imports
         run: |
