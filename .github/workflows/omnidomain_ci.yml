@@ -3,8 +3,18 @@ name: OmniDomain CI
 on:
   push:
     branches: [ main, dev, 'fix/**', 'feature/**', 'test-phytoflow', 'test-fungalflow' ]
+    paths:
+      - 'api/**'
+      - 'ui/**'
+      - 'tests/**'
+      - 'alembic/**'
+      - '.github/workflows/omnidomain_ci.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'ui/**'
+      - 'tests/**'
 
 jobs:
 
@@ -12,6 +22,20 @@ jobs:
   api-tests:
     name: API — repository + routes
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: omni
+          POSTGRES_PASSWORD: omnipass
+          POSTGRES_DB: omnidb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -36,9 +60,15 @@ jobs:
             psycopg2-binary \
             alembic
 
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
+        run: alembic upgrade head
+
+
       - name: Run repository and route tests
         env:
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
           JWT_SECRET: test-secret-not-for-production
           AWS_BATCH_JOB_DEFINITION: omni-nextflow-job
           AWS_BATCH_QUEUE: omni-batch-queue
@@ -48,7 +78,7 @@ jobs:
 
       - name: Check coverage
         env:
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
           JWT_SECRET: test-secret-not-for-production
         run: |
           pytest tests/test_repository.py tests/test_routes.py \
