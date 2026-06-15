@@ -68,6 +68,7 @@ jobs:
 
       - name: Run repository and route tests
         env:
+          PYTHONPATH: ${{ github.workspace }}
           DATABASE_URL: postgresql://omni:omnipass@localhost:5432/omnidb
           JWT_SECRET: test-secret-not-for-production
           AWS_BATCH_JOB_DEFINITION: omni-nextflow-job
@@ -126,6 +127,10 @@ jobs:
             boto3 \
             streamlit \
             alembic
+            fastapi \
+            httpx \
+           "pydantic[email]" \
+            pyjwt
 
       - name: Run Alembic migrations
         env:
