@@ -15,7 +15,7 @@ Tier B — File integrity (async S3 checks):
 
 import pandas as pd
 from typing import List, Dict, Tuple
-from core.s3_client import file_exists, key_from_uri, COMPUTE_BUCKET
+from ui.core.s3_client import file_exists, key_from_uri, COMPUTE_BUCKET
 
 
 # ── Schema definitions per pipeline ──────────────────────────────────────────
