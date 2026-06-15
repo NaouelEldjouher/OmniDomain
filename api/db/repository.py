@@ -2,7 +2,7 @@
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import select, update, desc
@@ -44,7 +44,7 @@ class UserRepository:
         db.execute(
             update(User)
             .where(User.user_id == user_id)
-            .values(last_login=datetime.utcnow())
+            .values(last_login=datetime.now(timezone.utc))
         )
 
 
@@ -120,7 +120,7 @@ class RunRepository:
                 status=RunStatus.SUBMITTED,
                 job_id=job_id,
                 job_name=job_name,
-                submitted_at=datetime.utcnow(),
+                submitted_at=datetime.now(timezone.utc),
             )
         )
         RunRepository._log_status(db, run_id, RunStatus.SUBMITTED, f"job_id={job_id}")
@@ -135,7 +135,7 @@ class RunRepository:
         log.debug("update_status: run=%s status=%s", run_id, status)
         values = {"status": status}
         if status in (RunStatus.COMPLETED, RunStatus.FAILED):
-            values["completed_at"] = datetime.utcnow()
+            values["completed_at"] = datetime.now(timezone.utc)
         db.execute(
             update(Run)
             .where(Run.run_id == run_id)

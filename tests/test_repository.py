@@ -116,10 +116,16 @@ class TestRunRepository:
 
     def test_get_by_user_returns_newest_first(self, db, user):
         """get_by_user returns runs ordered newest first."""
+        import time
+
         run1 = RunRepository.create(
             db, user_id=user.user_id, pipeline="NextAMR",
             sample_id="s1", tsv_row={}, base_outdir="s3://omni-results",
         )
+        db.commit()
+
+        time.sleep(0.05)  # ensure different created_at timestamps
+
         run2 = RunRepository.create(
             db, user_id=user.user_id, pipeline="FungalFlow",
             sample_id="s2", tsv_row={}, base_outdir="s3://omni-results",
@@ -128,7 +134,6 @@ class TestRunRepository:
 
         runs = RunRepository.get_by_user(db, user.user_id)
         assert len(runs) == 2
-        # newest first — run2 was created after run1
         assert runs[0].sample_id == "s2"
         assert runs[1].sample_id == "s1"
 
