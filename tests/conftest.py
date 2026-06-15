@@ -1,22 +1,27 @@
 # tests/conftest.py
 
+
+import os
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
 from api.db.session import Base
-from api.db.models import User, Run, Upload, RunStatusHistory
 from api.main import app
 from api.db.session import get_db
 
 
 # ── Test database ─────────────────────────────────────────────────────────────
-# Uses SQLite in-memory — no Docker needed for tests
-# Fast, isolated, destroyed after each test
 
-TEST_DATABASE_URL = "sqlite:///:memory:"
-
+def get_test_db_url() -> str:
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        raise RuntimeError(
+            "DATABASE_URL is not set. "
+            "Run: export DATABASE_URL=postgresql://omni:omnipass@localhost/omnidb"
+        )
+    return url
 
 @pytest.fixture(scope="function")
 def db():
@@ -25,10 +30,7 @@ def db():
     Creates all tables, yields a session, tears down after.
     scope="function" means each test gets a clean database.
     """
-    engine = create_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},  # needed for SQLite
-    )
+    engine = create_engine(get_test_db_url())
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -38,6 +40,7 @@ def db():
     finally:
         session.close()
         Base.metadata.drop_all(engine)
+        engine.dispose()
 
 
 @pytest.fixture(scope="function")
@@ -59,12 +62,14 @@ def client(db):
 
 
 @pytest.fixture
-def test_user(db) -> User:
+def test_user(db):
     """A pre-created user for tests that need one."""
     from api.db.repository import UserRepository
     user = UserRepository.create(db, "scientist@lab.de", "Dr. Test", "TestLab")
     db.commit()
     return user
+
+
 
 
 @pytest.fixture
